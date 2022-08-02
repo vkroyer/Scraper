@@ -27,7 +27,7 @@ if __name__ == "__main__":
         director_list_url_ready = my_user.get_directors_url_ready()
         director_url_list = []
 
-        for i, director in enumerate(director_list_url_ready):
+        for director in director_list_url_ready:
             con = session.post(f"https://www.imdb.com/find?q={director}&ref_=nv_sr_sm")
             soup = BeautifulSoup(con.text, features="html.parser")
             uniquelink = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
@@ -35,7 +35,7 @@ if __name__ == "__main__":
             directorlink = f'{IMDB_URL}{uniquelink}'
             director_url_list.append(directorlink)
 
-        total_announcement = "\n # A list of upcoming projects from directors I like"
+        total_announcement = "\n# A list of upcoming projects from directors I like in no particular order"
         for director, director_url in zip(director_list, director_url_list):
 
             directorpage = session.get(director_url)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             if not in_production_tags: # director has no upcoming projects :(
                 continue
 
-            header = f"\n\n### Upcoming productions from {director.upper()}:"
+            header = f"\n\n### Upcoming productions from {director}:"
             total_announcement += header
             for tag in in_production_tags:
                 project_element = tag.find_parent("div")
