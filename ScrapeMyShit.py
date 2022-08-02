@@ -35,7 +35,7 @@ if __name__ == "__main__":
             directorlink = f'{IMDB_URL}{uniquelink}'
             director_url_list.append(directorlink)
 
-        total_announcement = ""
+        total_announcement = "\n # A list of upcoming projects from directors I like"
         for director, director_url in zip(director_list, director_url_list):
 
             directorpage = session.get(director_url)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             if not in_production_tags: # director has no upcoming projects :(
                 continue
 
-            header = f"\n\n# NEW PROJECTS IN PRODUCTION BY {director.upper()}:"
+            header = f"\n\n### Upcoming productions from {director.upper()}:"
             total_announcement += header
             for tag in in_production_tags:
                 project_element = tag.find_parent("div")

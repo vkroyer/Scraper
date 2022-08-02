@@ -12,7 +12,7 @@ class IMDbUser:
         self._directors_url_ready = []
 
     def update_directorlist(self):
-        directorlist_url = os.environ.get("ANOTEPAD_URL")
+        directorlist_url = os.environ.get("ANOTEPAD_URL") # gets list of directors from an online notepad
 
         response = requests.get(directorlist_url)
         soup = BeautifulSoup(response.content, features="html.parser")
