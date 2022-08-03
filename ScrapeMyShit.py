@@ -1,6 +1,4 @@
-import requests
 from bs4 import BeautifulSoup
-from user import IMDbUser
 import re
 
 ###################
@@ -13,53 +11,58 @@ IMDB_LOGIN_URL = "https://www.imdb.com/ap/signin"
 ## END CONSTANTS ##
 ###################
 
+class Scraper:
 
-if __name__ == "__main__":
+    def __init__(self, session):
+        self._session = session
 
-    my_user = IMDbUser()
-    my_user.update_directorlist()
+    def get_peoples_links(self, names_url_ready:list):
+        """Searches for the names in the list on IMDb and returns a list of links to their IMDb pages"""
+        link_list = []
+        for name in names_url_ready:
+            response = self._session.post(f"{IMDB_URL}/find?q={name}&ref_=nv_sr_sm")
+            soup = BeautifulSoup(response.text, features="html.parser")
+            unique_link = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
 
-    with requests.Session() as session:
-        # payload = {"ap_email":my_user.username, "ap_password":my_user.password}
-        # post = session.post(IMDB_LOGIN_URL, data=payload)
+            name_link = f"{IMDB_URL}{unique_link}"
+            link_list.append(name_link)
 
-        director_list = my_user.get_directors()
-        director_list_url_ready = my_user.get_directors_url_ready()
-        director_url_list = []
+        return link_list
 
-        for director in director_list_url_ready:
-            con = session.post(f"https://www.imdb.com/find?q={director}&ref_=nv_sr_sm")
-            soup = BeautifulSoup(con.text, features="html.parser")
-            uniquelink = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
+    def get_director_projects(self, director_url:str):
+        project_dict = {"titles":[], "links":[]}
 
-            directorlink = f'{IMDB_URL}{uniquelink}'
-            director_url_list.append(directorlink)
+        directorpage = self._session.get(director_url)
+        soup = BeautifulSoup(directorpage.text, "html.parser")
 
-        total_announcement = "\n# A list of upcoming projects from directors I like in no particular order"
-        for director, director_url in zip(director_list, director_url_list):
+        director_element = soup.find("div", id="filmo-head-director")
+        director_credits_element = director_element.find_next_sibling("div") # finds all the productions directed by the current director
+        in_production_tags = director_credits_element.find_all("a", class_="in_production") # finds all productions that have not yet been released
 
-            directorpage = session.get(director_url)
-            soup = BeautifulSoup(directorpage.text, "html.parser")
+        if not in_production_tags: # director has no upcoming projects :(
+            return None
 
-            director_element = soup.find("div", id="filmo-head-director")
-            director_credits_element = director_element.find_next_sibling("div") # finds all the productions directed by the current director
-            in_production_tags = director_credits_element.find_all("a", class_="in_production") # finds all productions that have not yet been released
+        for tag in in_production_tags:
+            project_element = tag.find_parent("div")
+            
+            title = project_element.b.a.text
+            link = project_element.b.a["href"]
 
-            if not in_production_tags: # director has no upcoming projects :(
-                continue
-
-            header = f"\n\n### Upcoming productions from {director}:"
-            total_announcement += header
-            for tag in in_production_tags:
-                project_element = tag.find_parent("div")
-                
-                title = project_element.b.a.text
-                link = project_element.b.a["href"]
-
-                total_announcement += f"\n1. **{title}** ({IMDB_URL}{link})"
+            project_dict["titles"].append(title)
+            project_dict["links"].append(link)
         
-        # Write the upcoming projects announcement to a markdown file
-        with open("Announcement.md", "w") as f:
-            f.write(total_announcement)
+        return project_dict
+
+    def get_actor_projects(self, actor_url:str):
+        return None
+
+
+
+# if __name__ == "__main__":
+
+    # Write the upcoming projects announcement to a markdown file
+    # with open("Announcement.md", "w") as f:
+    #     f.write(total_announcement)
+    
         
     
