@@ -56,13 +56,4 @@ class Scraper:
     def get_actor_projects(self, actor_url:str):
         return None
 
-
-
-# if __name__ == "__main__":
-
-    # Write the upcoming projects announcement to a markdown file
-    # with open("Announcement.md", "w") as f:
-    #     f.write(total_announcement)
-    
-        
     

@@ -1,9 +1,10 @@
+from markdown import markdown
 import requests
 
-from AllProjects import AllProjects
-from ScrapeMyShit import Scraper
-from SendEmail import send_email
-from Users import UserPreferences
+from pythonstuff.AllProjects import AllProjects
+from pythonstuff.ScrapeMyShit import Scraper
+from pythonstuff.SendEmail import send_email
+from pythonstuff.Users import UserPreferences
 
 ###################
 #### CONSTANTS ####
@@ -43,17 +44,17 @@ def get_upcoming_projects(all_projects):
 
 
 def format_one_upcoming_projects_list(name:str, title_list:list, link_list:list):
-    sub_header = f"\n\n### {name.upper()} - Upcoming production(s)"
+    """Returns a string with the name of the actor/director as a subheader and the projects with clickable titles in an ordered markdown list"""
+    sub_header = f"\n\n### {name.upper()} - Upcoming production{'s' if len(title_list)>1 else ''}"
     projects_markdown = []
     for title, link in zip(title_list, link_list):
-        projects_markdown.append(f"1. **{title}** ({IMDB_URL}{link})")
+        projects_markdown.append(f"1. **[{title}]({IMDB_URL}{link})**")
     body = "\n".join(projects_markdown)
 
     return f"{sub_header}\n{body}"
 
 
 def format_mail(all_projects, director_flag:bool, actor_flag:bool):
-
     if not director_flag and not actor_flag:
         return None
 
@@ -87,10 +88,17 @@ if __name__ == "__main__":
     all_projects = AllProjects()
 
     get_upcoming_projects(all_projects)
-    mail_str = format_mail(all_projects, director_flag=True, actor_flag=False)
+
+    mail_markdown = format_mail(all_projects, director_flag=True, actor_flag=False)
+    mail_html = markdown(mail_markdown) # Converts markdown to html with the markdown module
 
     subject = "Weekly roundup of upcoming projects in movies and television"
-    to_address = "encodedspear@outlook.com"
 
-    send_email(subject=subject, to_address=to_address, content=mail_str)
+    # send_email(subject=subject, content=mail_str)
+
+    # For previewing what the mail content will look like
+    with open("tests/markdown_mailcontent.md", "w") as f:
+        f.write(mail_markdown)
+    with open("tests/html_mailcontent.html", "w") as f:
+        f.write(mail_html)
 

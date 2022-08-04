@@ -6,8 +6,9 @@ load_dotenv(find_dotenv())
 
 EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER_ADDRESS")
 
-def send_email(subject:str, to_address:str, content:str):
+def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER):
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = EMAIL_ADDRESS
