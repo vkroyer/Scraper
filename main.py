@@ -71,7 +71,7 @@ def format_mail(all_projects, director_flag:bool, actor_flag:bool):
         final_markdown_str += f"{director_projects_header}{director_projects_body}"
 
     if actor_flag:
-        actor_projects_header = "\n\n\n# A list of upcoming projects from actors I like in no particular order"
+        actor_projects_header = "\n\n\n# A list of upcoming projects from actors/actresses I like in no particular order"
         actor_projects_body = ""
 
         actors_projects = all_projects.get_actor_projects()
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     subject = "Weekly roundup of upcoming projects in movies and television"
 
-    # send_email(subject=subject, content=mail_str)
+    send_email(subject=subject, content=mail_html)
 
     # For previewing what the mail content will look like
     with open("tests/markdown_mailcontent.md", "w") as f:
