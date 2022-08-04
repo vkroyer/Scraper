@@ -35,7 +35,7 @@ def get_upcoming_projects(all_projects):
             projects = scraper.get_director_projects(dir_link)
             if projects is not None:
                 all_projects.set_director_projects(director, projects)
-        
+
         actor_links = scraper.get_peoples_links(actors_url_ready)
         for actor, actor_link in zip(actors, actor_links):
             projects = scraper.get_actor_projects(actor_link)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     get_upcoming_projects(all_projects)
 
-    mail_markdown = format_mail(all_projects, director_flag=True, actor_flag=False)
+    mail_markdown = format_mail(all_projects, director_flag=True, actor_flag=True)
     mail_html = markdown(mail_markdown) # Converts markdown to html with the markdown module
 
     subject = "Weekly roundup of upcoming projects in movies and television"

@@ -30,6 +30,7 @@ class Scraper:
         return link_list
 
     def get_director_projects(self, director_url:str):
+        """Looks for projects in production on a director's IMDb page and returns the projects as a dictionary with titles and links"""
         project_dict = {"titles":[], "links":[]}
 
         directorpage = self._session.get(director_url)
@@ -54,6 +55,28 @@ class Scraper:
         return project_dict
 
     def get_actor_projects(self, actor_url:str):
-        return None
+        """Looks for projects in production on an actor's IMDb page and returns the projects as a dictionary with titles and links"""
+        project_dict = {"titles":[], "links":[]}
 
-    
+        actorpage = self._session.get(actor_url)
+        soup = BeautifulSoup(actorpage.text, "html.parser")
+
+        actor_element = soup.find("div", id="filmo-head-actor")
+        if actor_element is None: actor_element = soup.find("div", id="filmo-head-actress") # women are listed as actresses
+
+        actor_credits_element = actor_element.find_next_sibling("div") # finds all the productions acted in by the current actor
+        in_production_tags = actor_credits_element.find_all("a", class_="in_production") # finds all productions that have not yet been released
+
+        if not in_production_tags: # actor has no upcoming projects :(
+            return None
+
+        for tag in in_production_tags:
+            project_element = tag.find_parent("div")
+            
+            title = project_element.b.a.text
+            link = project_element.b.a["href"]
+
+            project_dict["titles"].append(title)
+            project_dict["links"].append(link)
+        
+        return project_dict

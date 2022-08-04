@@ -1,4 +1,5 @@
 .env
 
 /__pycache__
+/pythonstuff/__pycache__
 /tests
