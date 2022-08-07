@@ -65,9 +65,11 @@ def format_mail(project_organizer, director_flag=True, actor_flag=True):
 
         directors_projects = project_organizer.get_director_projects()
         for director, projects in directors_projects.items():
-            director_projects_body += format_one_upcoming_projects_list(director, projects["titles"], projects["links"])
-
-        final_markdown_str += f"{director_projects_header}{director_projects_body}"
+            if len(projects["links"]) > 0:
+                director_projects_body += format_one_upcoming_projects_list(director, projects["titles"], projects["links"])
+        
+        if director_projects_body != "":
+            final_markdown_str += f"{director_projects_header}{director_projects_body}"
 
     if actor_flag:
         actor_projects_header = "\n\n\n# A list of upcoming projects from the actors/actresses you have chosen"
@@ -75,10 +77,15 @@ def format_mail(project_organizer, director_flag=True, actor_flag=True):
 
         actors_projects = project_organizer.get_actor_projects()
         for actor, projects in actors_projects.items():
-            actor_projects_body += format_one_upcoming_projects_list(actor, projects["titles"], projects["links"])
+            if len(projects["links"]) > 0:
+                actor_projects_body += format_one_upcoming_projects_list(actor, projects["titles"], projects["links"])
+        
+        if actor_projects_body != "":
+            final_markdown_str += f"{actor_projects_header}{actor_projects_body}"
     
-        final_markdown_str += f"{actor_projects_header}{actor_projects_body}"
-    
+    if final_markdown_str == "":
+        final_markdown_str = "There are no new upcoming projects from the directors/actors/actresses you have chosen since the last email update. That sucks"
+
     return final_markdown_str
 
 
@@ -94,7 +101,7 @@ if __name__ == "__main__":
     mail_markdown = format_mail(project_organizer)
     mail_html = markdown(mail_markdown) # Converts markdown to html with the markdown module
 
-    subject = "Weekly roundup of upcoming projects in movies and television"
+    subject = "Roundup of upcoming movies and TV shows"
 
     send_email(subject=subject, content=mail_html)
 
