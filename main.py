@@ -6,15 +6,6 @@ from pythonstuff.ScrapeMyShit import Scraper
 from pythonstuff.SendEmail import send_email
 from pythonstuff.Users import UserPreferences
 
-###################
-#### CONSTANTS ####
-
-#### URLs #########
-IMDB_URL = "https://imdb.com"
-
-## END CONSTANTS ##
-###################
-
 def get_upcoming_projects(project_organizer):
 
     user_preferences = UserPreferences()
