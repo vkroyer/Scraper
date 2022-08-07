@@ -18,6 +18,9 @@ def get_upcoming_projects(project_organizer):
     directors_url_ready = user_preferences.get_directors_url_ready()
     actors_url_ready = user_preferences.get_actors_url_ready()
 
+    # TODO: bruk denne jævelen som inneholder tidligere linker til imdb for å slippe å finne den samme linken hver gang programmet blir kjørt
+    previous_directors_link_dict, previous_actors_link_dict = project_organizer.get_previous_links()
+
     with requests.Session() as session:
         scraper = Scraper(session)
         director_links = scraper.get_peoples_links(directors_url_ready)
@@ -30,7 +33,9 @@ def get_upcoming_projects(project_organizer):
         for actor, actor_link in zip(actors, actor_links):
             projects = scraper.get_actor_projects(actor_link)
             if projects is not None:
-                project_organizer.set_actor_projects(actor, projects)          
+                project_organizer.set_actor_projects(actor, projects)
+
+    project_organizer.update_links(directors, director_links, actors, actor_links)
 
 
 def format_one_upcoming_projects_list(name:str, title_list:list, link_list:list):

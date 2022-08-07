@@ -1,4 +1,9 @@
 import json
+
+##### FILES #####
+PROJECTS_JSON = "data/project_log.json"
+URL_JSON = "data/url_log.json"
+
 class ProjectOrganizer:
 
     def __init__(self):
@@ -16,6 +21,29 @@ class ProjectOrganizer:
 
     def get_actor_projects(self):
         return self._actor_projects
+
+    def update_links(self, directors, director_links, actors, actor_links):
+        with open(URL_JSON, "r") as file:
+            json_content = json.load(file)
+        
+        for director, link in zip(directors, director_links):
+            if director not in json_content["Directors"]:
+                json_content["Directors"][director] = link
+        
+        for actor, link in zip(actors, actor_links):
+            if actor not in json_content["Actors"]:
+                json_content["Actors"][actor] = link
+
+        with open(URL_JSON, "w") as file:
+            json.dump(json_content, URL_JSON, indent=4)
+
+    def get_previous_links(self):
+        with open(URL_JSON, "r") as file:
+            json_content = json.load(file)
+        
+        directors_link_dict = json_content["Directors"]
+        actors_link_dict = json_content["Actors"]
+        return directors_link_dict, actors_link_dict
         
     def update_upcoming_projects(self):
         """
@@ -23,7 +51,7 @@ class ProjectOrganizer:
         If a new upcoming project doesn't exist in the json file, it will be updated with this project.
         """
 
-        with open("previous_projects/log.json", "r") as json_file:
+        with open(PROJECTS_JSON, "r") as json_file:
             json_content = json.load(json_file)
         
         # Update json content with new directors and new projects for existing directors
@@ -45,7 +73,7 @@ class ProjectOrganizer:
                     json_content["Actors"][actor]["links"].append(link)
 
         # Write the final content to the json file
-        with open("previous_projects/log.json", "w") as json_file:
+        with open(PROJECTS_JSON, "w") as json_file:
             json.dump(json_content, json_file, indent=4)
 
     def check_previous_upcoming_projects(self):
@@ -53,7 +81,7 @@ class ProjectOrganizer:
         Checks the json file to see if any of the new upcoming projects that has been found
         already exist in the json file. 
         """
-        with open("previous_projects/log.json", "r") as json_file:
+        with open(PROJECTS_JSON, "r") as json_file:
             full_json = json.load(json_file)
 
         # Remove previously scraped director projects
