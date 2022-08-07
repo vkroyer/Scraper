@@ -50,7 +50,7 @@ class Scraper:
             link = project_element.b.a["href"]
 
             project_dict["titles"].append(title)
-            project_dict["links"].append(link)
+            project_dict["links"].append(f"{IMDB_URL}{link}")
         
         return project_dict
 
@@ -77,6 +77,6 @@ class Scraper:
             link = project_element.b.a["href"]
 
             project_dict["titles"].append(title)
-            project_dict["links"].append(link)
+            project_dict["links"].append(f"{IMDB_URL}{link}")
         
         return project_dict
