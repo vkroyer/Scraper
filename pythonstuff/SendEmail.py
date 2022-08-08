@@ -4,8 +4,8 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_ADDRESS")
-EMAIL_SENDER_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_SENDER_ADDRESS")
+EMAIL_SENDER_PASSWORD = os.environ.get("EMAIL_SENDER_PASSWORD")
 EMAIL_RECEIVER_ADDRESS = os.environ.get("EMAIL_RECEIVER_ADDRESS")
 
 def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER_ADDRESS):
