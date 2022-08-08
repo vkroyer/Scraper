@@ -4,18 +4,18 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
-EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER_ADDRESS")
+EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_ADDRESS")
+EMAIL_SENDER_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+EMAIL_RECEIVER_ADDRESS = os.environ.get("EMAIL_RECEIVER_ADDRESS")
 
-def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER):
+def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER_ADDRESS):
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = EMAIL_ADDRESS
+    msg["From"] = EMAIL_SENDER_ADDRESS
     msg["To"] = to_address
     msg.set_content(content, subtype="html")
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        smtp.login(EMAIL_SENDER_ADDRESS, EMAIL_SENDER_PASSWORD)
         smtp.send_message(msg)
