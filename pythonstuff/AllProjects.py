@@ -23,8 +23,15 @@ class ProjectOrganizer:
         return self._actor_projects
 
     def update_links(self, directors, director_links, actors, actor_links):
-        with open(URL_JSON, "r") as file:
-            json_content = json.load(file)
+        """Save the IMDb links of directors/actors that don't already exist in the """
+        try:
+            with open(URL_JSON, "r") as json_file:
+                if "{" in json_file: # checks if there is any json data to read
+                    json_content = json.load(json_file)
+                else:
+                    json_content = {"Directors":{}, "Actors":{}}
+        except FileNotFoundError:
+            json_content = {"Directors":{}, "Actors":{}}
         
         for director, link in zip(directors, director_links):
             if director not in json_content["Directors"]:
@@ -34,12 +41,22 @@ class ProjectOrganizer:
             if actor not in json_content["Actors"]:
                 json_content["Actors"][actor] = link
 
-        with open(URL_JSON, "w") as file:
-            json.dump(json_content, URL_JSON, indent=4)
+        with open(URL_JSON, "w") as json_file:
+            json.dump(json_content, json_file, indent=4)
 
     def get_previous_links(self):
-        with open(URL_JSON, "r") as file:
-            json_content = json.load(file)
+        """
+        Checks the url json file to see if any of the directors/actors already has an IMDb link saved,
+        so that the script won't need to find their link again
+        """
+        try:
+            with open(URL_JSON, "r") as file:
+                if "{" in file: # checks if there is any json data to read
+                    json_content = json.load(file)
+                else:
+                    return None, None
+        except FileNotFoundError:
+            return None, None
         
         directors_link_dict = json_content["Directors"]
         actors_link_dict = json_content["Actors"]
@@ -61,6 +78,7 @@ class ProjectOrganizer:
         for director, projects in self._director_projects.items():
             if director not in json_content["Directors"]:
                 json_content["Directors"][director] = projects
+                continue
             for title, link in zip(projects["titles"], projects["links"]):
                 if link not in json_content["Directors"][director]["links"]:
                     json_content["Directors"][director]["titles"].append(title)
@@ -70,6 +88,7 @@ class ProjectOrganizer:
         for actor, projects in self._actor_projects.items():
             if actor not in json_content["Actors"]:
                 json_content["Actors"][actor] = projects
+                continue
             for title, link in zip(projects["titles"], projects["links"]):
                 if link not in json_content["Actors"][actor]["links"]:
                     json_content["Actors"][actor]["titles"].append(title)
@@ -91,6 +110,8 @@ class ProjectOrganizer:
             # Remove previously scraped director projects
             prev_dir_projects = full_json["Directors"]
             for director, projects in prev_dir_projects.items():
+                if director not in self._director_projects:
+                    continue
                 for link in projects["links"]:
                     if link in self._director_projects[director]["links"]:
                         project_idx = self._director_projects[director]["links"].index(link)
@@ -100,6 +121,8 @@ class ProjectOrganizer:
             # Remove previously scraped actor projects
             prev_act_projects = full_json["Actors"]
             for actor, projects in prev_act_projects.items():
+                if actor not in self._actor_projects:
+                    continue
                 for link in projects["links"]:
                     if link in self._actor_projects[actor]["links"]:
                         project_idx = self._actor_projects[actor]["links"].index(link)

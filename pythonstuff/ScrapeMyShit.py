@@ -16,18 +16,16 @@ class Scraper:
     def __init__(self, session):
         self._session = session
 
-    def get_peoples_links(self, names_url_ready:list):
-        """Searches for the names in the list on IMDb and returns a list of links to their IMDb pages"""
-        link_list = []
-        for name in names_url_ready:
-            response = self._session.post(f"{IMDB_URL}/find?q={name}&ref_=nv_sr_sm")
-            soup = BeautifulSoup(response.text, features="html.parser")
-            unique_link = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
+    def get_IMDb_page_link(self, name_url_ready:str):
+        """Searches for the name on IMDb and returns a link to their IMDb page"""
 
-            name_link = f"{IMDB_URL}{unique_link}"
-            link_list.append(name_link)
+        response = self._session.post(f"{IMDB_URL}/find?q={name_url_ready}&ref_=nv_sr_sm")
+        soup = BeautifulSoup(response.text, features="html.parser")
+        unique_link = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
 
-        return link_list
+        name_link = f"{IMDB_URL}{unique_link}"
+
+        return name_link
 
     def get_director_projects(self, director_url:str):
         """Looks for projects in production on a director's IMDb page and returns the projects as a dictionary with titles and links"""
