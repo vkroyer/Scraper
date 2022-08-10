@@ -44,13 +44,14 @@ class Scraper:
             return None
 
         for tag in in_production_tags:
-            project_element = tag.find_parent("div")
-            
-            title = project_element.b.a.text
-            link = project_element.b.a["href"]
+            if tag.text != "abandoned": # IMDb classifies abondoned productions with the same "in_production" html class smh..
+                project_element = tag.find_parent("div")
+                
+                title = project_element.b.a.text
+                link = project_element.b.a["href"]
 
-            project_dict["titles"].append(title)
-            project_dict["links"].append(f"{IMDB_URL}{link}")
+                project_dict["titles"].append(title)
+                project_dict["links"].append(f"{IMDB_URL}{link}")
         
         return project_dict
 
