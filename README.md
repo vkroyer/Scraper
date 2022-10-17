@@ -1,12 +1,16 @@
 
-# A little project that checks for upcoming movies and TV shows by certain directors (and actors maybe)
+# A python script that looks for upcoming movies and TV shows
 
-## The list of directors
-An online notepad is used so the list of directors I like can be changed at any time from anywhere. The python script will then retrieve this list when it is run.
 
-## IMDb
-The script will go through the list of directors and look for their page on IMDb and search for movies and TV shows currently in production. 
+## How to run the script
+- Make sure you have python installed
+- Install the required modules using one of the following commands
+    - Windows: ``pip install -r requirements.txt``
+    - Linux: ``pip3 install -r requirements.txt``
+- Make sure to have or create a new google account, and add access for less secure apps 
+- Create a file called ".env" and add these lines:
+    - DIRECTORLIST_URL = "link to your list of directors"
+    - ACTORLIST_URL = "link to your list of actors"
+    - EMAIL_SENDER_ADDRESS = "sender email address"
 
-## Output of Python code
-All upcoming productions are listed in markdown format and written to a file. A preview of the format can be seen in [this file](https://github.com/vkroyer/Scraper/blob/master/OutputPreview.md).
 

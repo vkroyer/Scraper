@@ -51,6 +51,8 @@ def get_upcoming_projects(project_organizer):
             if projects is not None:
                 project_organizer.set_director_projects(director, projects)
 
+            print(f"{i+1}/{len(directors)} directors done")
+
         for i, actor in enumerate(actors):
             if i not in actors_with_link_indices:
                 actor_link = scraper.get_IMDb_page_link(actors_url_ready[i])
@@ -61,6 +63,9 @@ def get_upcoming_projects(project_organizer):
             projects = scraper.get_actor_projects(actor_link)
             if projects is not None:
                 project_organizer.set_actor_projects(actor, projects)
+
+            print(f"{i+1}/{len(actors)} actors done")
+
 
     project_organizer.update_links(directors, director_links, actors, actor_links)
 
