@@ -1,8 +1,18 @@
 import json
+from dataclasses import dataclass, field
 
 ##### FILES #####
 PROJECTS_JSON = "data/project_log.json"
 URL_JSON = "data/url_log.json"
+
+
+@dataclass
+class FilmProject:
+    url: str
+    title: str
+    director: str
+    synopsis: str
+    stars: "list[str]" = field(default_factory=list)
 
 class ProjectOrganizer:
 

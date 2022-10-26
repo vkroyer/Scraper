@@ -83,7 +83,7 @@ def format_one_upcoming_projects_list(name:str, title_list:list, link_list:list)
 
 def format_mail(project_organizer, director_flag=True, actor_flag=True):
     if not director_flag and not actor_flag:
-        return None
+        return ""
 
     final_markdown_str = ""
 
