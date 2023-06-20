@@ -71,7 +71,6 @@ class Scraper:
 
             film_project = FilmProject(url=project_url, title=title, director=director)
 
-            person.projects.append(film_project.id)
             projects.append(film_project)
     
         return projects
