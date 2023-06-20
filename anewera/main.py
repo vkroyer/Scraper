@@ -1,13 +1,15 @@
+import json
+import requests
+from mail import format_mail, send_email
+from markdown import markdown
 from projects import instantiate_person, AllProjects
 from scrape import Scraper
 from user import UserPreferences
-import json
-import requests
 
 def main():
     all_projects = AllProjects()
-    # all_projects.get_previous_persons()
-    # all_projects.get_previous_projects()
+    all_projects.get_previous_persons()
+    all_projects.get_previous_projects()
 
     user = UserPreferences()
     user.update_actorlist()
@@ -16,7 +18,7 @@ def main():
     with requests.Session() as session:
         scraper = Scraper(session=session)
         for director_name in user.directors:
-            if director_name not in all_projects.persons:
+            if director_name not in [person.name for person in all_projects.persons]:
                 director = instantiate_person(scraper=scraper, name=director_name, is_director=True, is_actor=False)
                 director.url = scraper.get_IMDb_page_url(director.name_url_ready)
                 all_projects.add_person(director)
@@ -39,6 +41,9 @@ def main():
 
     with open("data/film_project_log.json", "w") as f:
         f.write(film_project_json_content)
+
+
+    
 
 if __name__ == "__main__":
     import time

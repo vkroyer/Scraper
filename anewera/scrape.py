@@ -1,6 +1,6 @@
+import re
 from bs4 import BeautifulSoup
 from projects import FilmProject, Person
-import re
 
 IMDB_URL = "https://imdb.com"
 REQUEST_HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0"}

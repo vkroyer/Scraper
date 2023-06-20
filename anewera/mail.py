@@ -1,7 +1,9 @@
-import smtplib
-from email.message import EmailMessage
 import os
+import smtplib
 from dotenv import load_dotenv, find_dotenv
+from email.message import EmailMessage
+from projects import AllProjects, FilmProject, Person
+
 load_dotenv(find_dotenv())
 
 EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_SENDER_ADDRESS")
@@ -21,18 +23,18 @@ def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER_ADDRESS):
         smtp.send_message(msg)
 
 
-def format_one_upcoming_projects_list(name:str, title_list:list, link_list:list):
+def format_one_upcoming_projects_list(name:str, projects:"list[FilmProject]"):
     """Returns a string with the name of the actor/director as a subheader and the projects with clickable titles in an ordered markdown list"""
     sub_header = f"\n\n### {name.upper()}"
     projects_markdown = []
-    for title, link in zip(title_list, link_list):
-        projects_markdown.append(f"1. **[{title}]({link})**")
+    for project in projects:
+        projects_markdown.append(f"1. **[{project.title}]({project.url})**")
     body = "\n".join(projects_markdown)
 
     return f"{sub_header}\n{body}"
 
 
-def format_mail(project_organizer, director_flag=True, actor_flag=True):
+def format_mail(all_projects:AllProjects, director_flag=True, actor_flag=True):
     if not director_flag and not actor_flag:
         return ""
 
@@ -42,10 +44,10 @@ def format_mail(project_organizer, director_flag=True, actor_flag=True):
         director_projects_header = "# List(s) of upcoming projects from the directors you have chosen"
         director_projects_body = ""
 
-        directors_projects = project_organizer.get_director_projects()
-        for director, projects in directors_projects.items():
-            if len(projects["links"]) > 0:
-                director_projects_body += format_one_upcoming_projects_list(director, projects["titles"], projects["links"])
+        for director in all_projects.directors:
+            if len(director.projects) > 0:
+                film_projects = [project for project in all_projects.film_projects if project.id in director.projects]
+                director_projects_body += format_one_upcoming_projects_list(director.name, film_projects)
         
         if director_projects_body != "":
             final_markdown_str += f"{director_projects_header}{director_projects_body}"
@@ -54,15 +56,15 @@ def format_mail(project_organizer, director_flag=True, actor_flag=True):
         actor_projects_header = "\n\n\n# List(s) of upcoming projects from the actors/actresses you have chosen"
         actor_projects_body = ""
 
-        actors_projects = project_organizer.get_actor_projects()
-        for actor, projects in actors_projects.items():
-            if len(projects["links"]) > 0:
-                actor_projects_body += format_one_upcoming_projects_list(actor, projects["titles"], projects["links"])
+        for actor in all_projects.actors:
+            if len(actor.projects) > 0:
+                film_projects = [project for project in all_projects.film_projects if project.id in actor.projects]
+                actor_projects_body += format_one_upcoming_projects_list(actor.name, film_projects)
         
         if actor_projects_body != "":
             final_markdown_str += f"{actor_projects_header}{actor_projects_body}"
     
     if final_markdown_str == "":
-        final_markdown_str = "## Shit is pre scraped...\nThere are no new upcoming projects from the directors/actors/actresses you have chosen since the last email update. **That sucks**"
+        final_markdown_str = "## There are no new upcoming projects from the directors/actors/actresses you have chosen since the last email update."
 
     return final_markdown_str

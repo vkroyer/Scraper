@@ -1,7 +1,7 @@
-from dataclasses import asdict, dataclass, field
 import json
 import random
 import string
+from dataclasses import asdict, dataclass, field
 
 def generate_id() -> str:
     chars = string.ascii_letters + string.digits + string.punctuation
@@ -95,6 +95,14 @@ class AllProjects:
     @property
     def persons(self):
         return self._persons
+    
+    @property
+    def directors(self):
+        return self._directors
+    
+    @property
+    def actors(self):
+        return self._actors
 
     def add_projects(self, projects:"list[FilmProject]"):
         for project in projects:
