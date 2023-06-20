@@ -1,12 +1,13 @@
-from projects import instantiate_person
-from User import UserPreferences
+from projects import instantiate_person, AllProjects
 from scrape import Scraper
+from user import UserPreferences
 import json
 import requests
 
 def main():
-    all_projects = []
-    people = []
+    all_projects = AllProjects()
+    # all_projects.get_previous_persons()
+    # all_projects.get_previous_projects()
 
     user = UserPreferences()
     user.update_actorlist()
@@ -14,19 +15,30 @@ def main():
 
     with requests.Session() as session:
         scraper = Scraper(session=session)
-        people += [instantiate_person(scraper=scraper, name=name, is_director=True, is_actor=False) for name in user.get_directors()]
-        # people += [instantiate_person(scraper=scraper, name=name, is_director=False, is_actor=True) for name in user.get_actors()]
-    
-    json_content = json.dumps({person.name:person.__dict__ for person in people}, indent=4)
-    with open("stuff.json", "w") as f:
-        f.write(json_content)
+        for director_name in user.directors:
+            if director_name not in all_projects.persons:
+                director = instantiate_person(scraper=scraper, name=director_name, is_director=True, is_actor=False)
+                director.url = scraper.get_IMDb_page_url(director.name_url_ready)
+                all_projects.add_person(director)
+        # for actor_name in user.actors:
+        #     actor = instantiate_person(scraper=scraper, name=actor_name, is_director=False, is_actor=True)
+        #     all_projects.add_person(actor)
 
-    #     for person in people:
-    #         projects = scraper.get_projects(person.url, person.director)
-    #         person.projects = [project.id for project in projects]
-    #         all_projects += projects
-    # for project in all_projects:
-    #     print(project)
+        for person in all_projects.persons:
+            projects = scraper.get_projects(person)
+            all_projects.add_projects(projects=projects)
+            for project in projects:
+                person.projects.append(project.id)
+
+
+    person_json_content = json.dumps({person.name:person.__dict__ for person in all_projects.persons}, indent=4)
+    film_project_json_content = json.dumps({project.id:project.__dict__ for project in all_projects.film_projects}, indent=4)
+
+    with open("data/person_log.json", "w") as f:
+        f.write(person_json_content)
+
+    with open("data/film_project_log.json", "w") as f:
+        f.write(film_project_json_content)
 
 if __name__ == "__main__":
     import time

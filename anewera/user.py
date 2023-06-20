@@ -23,7 +23,8 @@ class UserPreferences:
             if director != "":
                 self._directors.append(director)
 
-    def get_directors(self):
+    @property
+    def directors(self):
         """Returns a list of director names"""
         return self._directors
 
@@ -41,7 +42,8 @@ class UserPreferences:
             if actor != "":
                 self._actors.append(actor)
 
-    def get_actors(self):
+    @property
+    def actors(self):
         """Returns a list of actor names"""
         return self._actors
 
@@ -49,7 +51,10 @@ class UserPreferences:
 if __name__ == "__main__":
     user = UserPreferences()
 
-    # user.update_actorlist()
+    user.update_actorlist()
+    user.update_directorlist()
     # print("Actors from aNotepad:")
-    # [print(actor) for actor in user.get_actors()]
+    # [print(actor) for actor in user.actors]
+    print("Directors from aNotepad:")
+    [print(director) for director in user.directors]
     

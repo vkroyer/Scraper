@@ -4,7 +4,7 @@ import random
 import string
 
 def generate_id() -> str:
-    chars = string.ascii_letters + string.digits
+    chars = string.ascii_letters + string.digits + string.punctuation
     return "".join(random.choices(chars, k=16))
 
 @dataclass
@@ -12,7 +12,7 @@ class FilmProject:
     id: str = field(init=False, default_factory=generate_id)
     url: str
     title: str
-    # director: str
+    director: str
     # synopsis: str
     # genres: "list[str]" = field(default_factory=list)
     # stars: "list[str]" = field(default_factory=list)
@@ -63,8 +63,17 @@ class AllProjects:
         self._directors: "list[Person]" = []
         self._actors: "list[Person]" = []
 
-    def add_project(self, project):
-        self._film_projects.append(project)
+    @property
+    def film_projects(self):
+        return self._film_projects
+
+    @property
+    def persons(self):
+        return self._persons
+
+    def add_projects(self, projects:"list[FilmProject]"):
+        for project in projects:
+            self._film_projects.append(project)
 
     def add_person(self, person):
         self._persons.append(person)
@@ -78,21 +87,29 @@ class AllProjects:
             elif not person.is_director and person not in self._actors:
                 self._actors.append(person)
 
-    # def get_previous(self, filename):
-    #     try:
-    #         with open(filename, "r") as f:
-    #             person_dict = json.load(f)
-    #             for person in person_dict:
+    def get_previous_persons(self, filename_persons:str="data/person_log.json"):
+        """Retrieve previously scraped information about directors/actors."""
+        try:
+            with open(filename_persons, "r") as f:
+                person_dict = json.load(f)
+                for person in person_dict:
+                    self.add_person(person)
 
-    #                 pers = Person(person_dict[person].)
+        except FileNotFoundError as e:
+            print(e)
 
-    #     except FileNotFoundError as e:
-    #         print(e)
+    def get_previous_projects(self, filename_projects:str="data/film_project_log.json"):
+        """Retrieve previously scraped information about upcoming projects."""
+        try:
+            with open(filename_projects, "r") as f:
+                project_dict = json.load(f)
+                for project in project_dict:
+                    self.add_projects(project)
+
+        except FileNotFoundError as e:
+            print(e)
 
 
 
-# if __name__ == "__main__":
-#     # guy = Person(name="Guy Ritchie", url="https://imdb.com/", director=True, actor=False)
-#     # print(guy.json)
-#     projs = AllProjects()
-#     projs.get_previous("stuff.json")
+if __name__ == "__main__":
+    projs = AllProjects()

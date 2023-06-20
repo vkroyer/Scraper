@@ -1,8 +1,12 @@
 from bs4 import BeautifulSoup
-from projects import FilmProject
+from projects import FilmProject, Person
 import re
 
 IMDB_URL = "https://imdb.com"
+REQUEST_HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0"}
+
+DIRECTOR_UPCOMING_CLASS_NAME = "ipc-metadata-list ipc-metadata-list--dividers-between date-unrel-credits-list ipc-metadata-list--base"
+
 
 
 class Scraper:
@@ -13,54 +17,61 @@ class Scraper:
     def get_IMDb_page_url(self, name_url_ready:str):
         """Searches for the name on IMDb and returns a link to their IMDb page"""
 
-        response = self._session.post(f"{IMDB_URL}/find?q={name_url_ready}&ref_=nv_sr_sm")
+        url = f"{IMDB_URL}/find?q={name_url_ready}&ref_=nv_sr_sm"
+        response = self._session.get(url, headers=REQUEST_HEADERS)
         soup = BeautifulSoup(response.text, features="html.parser")
-        unique_url = soup.find("a", {"href":re.compile(r"/name/nm")})['href']
-
-        name_url = f"{IMDB_URL}{unique_url}"
+        url_result = soup.find("a", {"href":re.compile(r"/name/nm")})
+        if url_result:
+            unique_url = url_result['href']
+            name_url = f"{IMDB_URL}{unique_url}"
+        else:
+            name_url = ""
 
         return name_url
 
-    def get_projects(self, url:str, is_director:bool) -> "list[FilmProject]":
+    def get_projects(self, person:Person) -> "list[FilmProject]":
         """Looks for projects in production on an IMDb page and returns the projects"""
+
+        if person.url is None:
+            return []
 
         projects = []
 
-        page = self._session.get(url)
+        page = self._session.get(person.url, headers=REQUEST_HEADERS)
         soup = BeautifulSoup(page.text, "html.parser")
 
-        if is_director:
-            element = soup.find("div", id="filmo-head-director")
-        elif not is_director:
-            element = soup.find("div", id="filmo-head-actor")
-            if element is None: element = soup.find("div", id="filmo-head-actress")
-
-        credits_element = element.find_next_sibling("div") # finds all the productions directed by the current director
-        in_production_tags = credits_element.find_all("a", class_="in_production") # finds all productions that have not yet been released
-
-        if not in_production_tags: # no upcoming projects :(
+        upcoming_list_element = None
+        if person.is_director:
+            try:
+                # Find the elements in the html corresponding to the list of upcoming projects
+                h3_element = soup.find("h3", text="Director")
+                upcoming_element = h3_element.find_next("li", text="Upcoming")
+                upcoming_list_element = upcoming_element.find_next("ul", class_=DIRECTOR_UPCOMING_CLASS_NAME)
+            except AttributeError:
+                print(f"Director credits not displayed by default for current director: {person.name}")
+        
+        if upcoming_list_element is None: # no upcoming projects :(
             return []
 
-        for tag in in_production_tags:
-            if tag.text != "abandoned": # IMDb classifies abondoned productions with the same "in_production" html class smh..
-                project_element = tag.find_parent("div")
-                
-                title = project_element.b.a.text
-                project_url = f"{IMDB_URL}{project_element.b.a['href']}"
-                # director = ""
-                # synopsis = ""
-                # genres = []
-                # stars = []
+        for element in upcoming_list_element.contents:
+            
+            project_element = element.find_next("a", class_="ipc-metadata-list-summary-item__t")
+            
+            if not project_element:
+                continue
 
-                projects.append(
-                    FilmProject(
-                        url = project_url,
-                        title = title,
-                        # director = director,
-                        # synopsis = synopsis,
-                        # genres = genres,
-                        # stars = stars
-                    )
-                )
-        
+            title = project_element.text
+            project_url = f"{IMDB_URL}{project_element.attrs['href']}"
+            director = ""
+            if person.is_director:
+                director = person.name
+            # synopsis = ""
+            # genres = []
+            # stars = []
+
+            film_project = FilmProject(url=project_url, title=title, director=director)
+
+            person.projects.append(film_project.id)
+            projects.append(film_project)
+    
         return projects
