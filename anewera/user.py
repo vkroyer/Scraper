@@ -1,8 +1,8 @@
 import os
 import requests
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
-from bs4 import BeautifulSoup
 
 class UserPreferences:
     def __init__(self):
