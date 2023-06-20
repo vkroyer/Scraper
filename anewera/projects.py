@@ -98,10 +98,12 @@ class AllProjects:
     
     @property
     def directors(self):
+        self.update_lists()
         return self._directors
     
     @property
     def actors(self):
+        self.update_lists()
         return self._actors
 
     def add_projects(self, projects:"list[FilmProject]"):

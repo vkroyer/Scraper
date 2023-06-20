@@ -17,14 +17,18 @@ def main():
 
     with requests.Session() as session:
         scraper = Scraper(session=session)
+        
         for director_name in user.directors:
-            if director_name not in [person.name for person in all_projects.persons]:
-                director = instantiate_person(scraper=scraper, name=director_name, is_director=True, is_actor=False)
-                director.url = scraper.get_IMDb_page_url(director.name_url_ready)
-                all_projects.add_person(director)
-        # for actor_name in user.actors:
-        #     actor = instantiate_person(scraper=scraper, name=actor_name, is_director=False, is_actor=True)
-        #     all_projects.add_person(actor)
+            if director_name in [person.name for person in all_projects.directors]:
+                continue
+            director = instantiate_person(scraper=scraper, name=director_name, is_director=True, is_actor=False)
+            all_projects.add_person(director)
+        
+        for actor_name in user.actors:
+            if actor_name in [person.name for person in all_projects.actors]:
+                continue
+            actor = instantiate_person(scraper=scraper, name=actor_name, is_director=False, is_actor=True)
+            all_projects.add_person(actor)
 
         for person in all_projects.persons:
             projects = scraper.get_projects(person)
