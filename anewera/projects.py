@@ -54,7 +54,7 @@ def instantiate_person(scraper, name:str, is_director:bool, is_actor:bool) -> Pe
     person.url = scraper.get_IMDb_page_url(name_url_ready=person.name_url_ready)
     return person
 
-def instansiate_previous_person(json_info:dict):
+def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
         name=json_info["name"],
@@ -68,7 +68,7 @@ def instansiate_previous_person(json_info:dict):
 
     return person
 
-def instansiate_previous_film_project(json_info:dict):
+def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
         url=json_info["url"],
