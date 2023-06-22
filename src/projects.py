@@ -8,14 +8,18 @@ class FilmProject:
     id: str
     url: str
     title: str
-    director: str
-    # synopsis: str
-    # genres: "list[str]" = field(default_factory=list)
+    synopsis: str
+    genres: "list[str]" = field(default_factory=list)
+    # director: str
     # stars: "list[str]" = field(default_factory=list)
 
     @property
     def __dict__(self):
         return asdict(self)
+    
+    @property
+    def json(self):
+        return json.dumps(self.__dict__, indent=4)
 
 
 @dataclass
@@ -58,11 +62,11 @@ def instansiate_previous_person(json_info:dict) -> Person:
 def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
+        id=json_info["id"],
         url=json_info["url"],
         title=json_info["title"],
         director=json_info["director"]
     )
-    film_project.id = json_info["id"]
 
     return film_project
 
