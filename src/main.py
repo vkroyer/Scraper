@@ -7,17 +7,6 @@ from scrape import Scraper
 from user import UserPreferences
 
 
-def update_json_files(all_projects:AllProjects):
-    person_json_content = json.dumps({person.name:person.__dict__ for person in all_projects.persons}, indent=4)
-    film_project_json_content = json.dumps({project.id:project.__dict__ for project in all_projects.film_projects}, indent=4)
-
-    with open("data/person_log.json", "w") as f:
-        f.write(person_json_content)
-
-    with open("data/film_project_log.json", "w") as f:
-        f.write(film_project_json_content)
-
-
 
 def main():
     all_projects = AllProjects()
