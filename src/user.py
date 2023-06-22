@@ -5,6 +5,7 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
+
 class UserPreferences:
     def __init__(self):
         self._directors = []
@@ -15,14 +16,22 @@ class UserPreferences:
 
         directorlist_url = os.environ.get("DIRECTORLIST_URL")
 
-        response = requests.get(directorlist_url)
-        soup = BeautifulSoup(response.content, features="html.parser")
+        if not directorlist_url:
+            return  # Early return if the directorlist_url is not defined
 
-        # Find the textarea and append all directors to the list
-        directors_string = soup.find("div", {"class":"plaintext"}).text
-        for director in directors_string.split("\n"):
-            if director != "":
-                self._directors.append(director)
+        response = requests.get(directorlist_url)
+        if not response.ok:
+            return  # Early return if the request was not successful
+
+        # Parse html and find the text field with directors
+        soup = BeautifulSoup(response.content, features="html.parser")
+        plain_text_div = soup.find("div", {"class": "plaintext"})
+        if not plain_text_div:
+            return  # Early return if the plaintext div is not found
+
+        directors_string = plain_text_div.text
+        self._directors = [director for director in directors_string.split("\n") if director]
+
 
     @property
     def directors(self):
@@ -34,14 +43,21 @@ class UserPreferences:
 
         actorlist_url = os.environ.get("ACTORLIST_URL")
 
-        response = requests.get(actorlist_url)
-        soup = BeautifulSoup(response.content, features="html.parser")
+        if not actorlist_url:
+            return  # Early return if the actorlist_url is not defined
 
-        # Find the textarea and append all actors to the list
-        actors_string = soup.find("div", {"class":"plaintext"}).text
-        for actor in actors_string.split("\n"):
-            if actor != "":
-                self._actors.append(actor)
+        response = requests.get(actorlist_url)
+        if not response.ok:
+            return  # Early return if the request was not successful
+
+        # Parse html and find the text field with actors
+        soup = BeautifulSoup(response.content, features="html.parser")
+        plain_text_div = soup.find("div", {"class": "plaintext"})
+        if not plain_text_div:
+            return  # Early return if the plaintext div is not found
+
+        actors_string = plain_text_div.text
+        self._actors = [actor for actor in actors_string.split("\n") if actor]
 
     @property
     def actors(self):
@@ -54,8 +70,8 @@ if __name__ == "__main__":
 
     user.update_actorlist()
     user.update_directorlist()
-    # print("Actors from aNotepad:")
-    # [print(actor) for actor in user.actors]
-    print("Directors from aNotepad:")
+    print("\nActors from aNotepad:")
+    [print(actor) for actor in user.actors]
+    print("\nDirectors from aNotepad:")
     [print(director) for director in user.directors]
     
