@@ -9,8 +9,8 @@ from projects import FilmProject, Person
 load_dotenv(find_dotenv())
 
 API_READ_ACCESS_TOKEN = os.environ.get("API_READ_ACCESS_TOKEN")
-UPCOMING_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
+UPCOMING_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
 TMDB_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
 TMDB_GENRES_FILE = "data/genres.json"
@@ -82,7 +82,7 @@ def get_genres_by_id(genre_ids: "list[int]"):
 
 def normalize_string(title: str) -> str:
     """Normalizes a string to find the correct url version of the string."""
-    
+
     # Remove or replace special characters
     normalized_title = re.sub(r"[^\w\s-]", "-", title)
     # Replace whitespace with dashes
