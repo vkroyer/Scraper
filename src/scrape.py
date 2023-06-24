@@ -11,8 +11,10 @@ load_dotenv(find_dotenv())
 API_READ_ACCESS_TOKEN = os.environ.get("API_READ_ACCESS_TOKEN")
 UPCOMING_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
+TMDB_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
 TMDB_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
 TMDB_GENRES_FILE = "data/genres.json"
+TMDB_PERSON_IDS_FILE = "data/person_ids.json"
 DATE_TODAY = datetime.today().date()
 
 HEADERS = {
@@ -21,7 +23,37 @@ HEADERS = {
 }
 
 
-def get_genres_by_id(genre_ids:"list[int]"):
+def get_person_id(name: str) -> str:
+    """Looks up the id of the director/actor on TMDb for use in future API calls with this person."""
+
+    # Check if the person ID exists in the JSON file
+    if os.path.isfile(TMDB_PERSON_IDS_FILE):
+        with open(TMDB_PERSON_IDS_FILE, "r") as file:
+            data = json.load(file)
+            if name in data["persons"]:
+                return data["persons"][name] # id is the value of the name key
+
+    # If the person ID is not found in the JSON file, make the API request
+    response = requests.get(f"{TMDB_PERSON_URL}{name}", headers=HEADERS)
+    data = response.json()
+    if response.status_code == 200 and data["results"]:
+        person_id = data["results"][0]["id"]
+
+        # Store the person ID in the JSON file for future use
+        with open(TMDB_PERSON_IDS_FILE, "a+") as file:
+            try:
+                person_ids = json.load(file)
+            except json.decoder.JSONDecodeError:
+                person_ids = {"persons": []}
+            person_ids["persons"].append({"name": name, "id": person_id})
+            file.seek(0)
+            json.dump(person_ids, file, indent=4)
+        return person_id
+
+    return None
+
+
+def get_genres_by_id(genre_ids: "list[int]"):
     """Convert TMDb genre ids to the genre names, either from existing file or from the API."""
 
     all_genres: dict[str, str] = {}
@@ -39,7 +71,7 @@ def get_genres_by_id(genre_ids:"list[int]"):
             all_genres = {genre["id"]: genre["name"] for genre in data["genres"]}
             # Save the genres to a JSON file for future use
             with open(TMDB_GENRES_FILE, "w") as file:
-                json.dump(all_genres, file)
+                json.dump(all_genres, file, indent=4)
         else:
             print(f"Error: {data['status_message']}")
     
@@ -48,7 +80,9 @@ def get_genres_by_id(genre_ids:"list[int]"):
     return current_genres
 
 
-def normalize_title(title) -> str:
+def normalize_string(title: str) -> str:
+    """Normalizes a string to find the correct url version of the string."""
+    
     # Remove or replace special characters
     normalized_title = re.sub(r"[^\w\s-]", "-", title)
     # Replace whitespace with dashes
@@ -56,7 +90,7 @@ def normalize_title(title) -> str:
     return normalized_title.lower()
 
 
-def find_upcoming_projects(person_id) -> "list[FilmProject]":
+def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
     """Calls the API with the id of the person and returns upcoming projects with said person."""
 
     projects = []
@@ -84,7 +118,7 @@ def find_upcoming_projects(person_id) -> "list[FilmProject]":
                 genre_ids = film_project["genre_ids"]
                 
                 # Build the url for the film project
-                normalized_title = normalize_title(title=title)
+                normalized_title = normalize_string(title=title)
                 url = f"{TMDB_MOVIE_URL}/{film_id}-{normalized_title}"
 
                 # Convert genre ids to actual genres
@@ -98,8 +132,9 @@ def find_upcoming_projects(person_id) -> "list[FilmProject]":
 
 
 if __name__ == "__main__":
-    guy_ritchie = "956"
-    projects = find_upcoming_projects(guy_ritchie)
+
+    person = get_person_id("Christopher Nolan")
+    projects = find_upcoming_projects(person)
 
     for project in projects:
         print(project.json)
