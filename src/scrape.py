@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from dotenv import find_dotenv, load_dotenv
-from projects import FilmProject
+from projects import FilmProject, Person
 from requests_session import RateLimitedSession
 
 load_dotenv(find_dotenv())
@@ -36,34 +36,12 @@ HEADERS = {
 def get_person_id(requests_session: RateLimitedSession, name: str) -> str:
     """Looks up the id of the director/actor on TMDb for use in future API calls with this person."""
 
-    # Check if the person ID exists in the JSON file
-    if os.path.isfile(TMDB_PERSON_IDS_FILE):
-        with open(TMDB_PERSON_IDS_FILE, "r") as file:
-            data = json.load(file)
-            if name in data["persons"]:
-                return data["persons"][name] # id is the value of the name key
-
-    # If the person ID is not found in the JSON file, make the API request
     response = requests_session.get(f"{TMDB_API_PERSON_URL}{name}", headers=HEADERS)
     data = response.json()
     if response.status_code == 200 and data["results"]:
         person_id = data["results"][0]["id"]
-
-        # Add the person ID to the json content
-        with open(TMDB_PERSON_IDS_FILE, "r") as file:
-            try:
-                person_ids = json.load(file)
-            except json.decoder.JSONDecodeError:
-                person_ids = {"persons": []}
-            person_ids["persons"].append({"name": name, "id": person_id})
-        
-        # Write to the json file of person IDs
-        with open(TMDB_PERSON_IDS_FILE, "w") as file:
-            json.dump(person_ids, file, indent=4)
         
         return person_id
-
-    return None
 
 
 def get_genres_by_id(requests_session: RateLimitedSession, genre_ids: "list[int]"):
@@ -108,7 +86,7 @@ def normalize_string(title: str) -> str:
     return normalized_title.lower()
 
 
-def find_upcoming_projects(requests_session: RateLimitedSession, person_id: str) -> "list[FilmProject]":
+def find_upcoming_projects(requests_session: RateLimitedSession, person: Person) -> "list[FilmProject]":
     """Calls the API with the id of the person and returns upcoming projects with said person."""
 
     projects = []
@@ -118,8 +96,12 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person_id: str)
         "include_video": False,
         "language": "en-US",
         "sort_by": "primary_release_date.desc",
-        "with_crew": person_id
     }
+
+    if person.is_actor:
+        params["with_cast"] = person.tmdb_id
+    elif person.is_director:
+        params["with_crew"] = person.tmdb_id
 
     response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
 

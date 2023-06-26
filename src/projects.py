@@ -1,6 +1,12 @@
 import json
 from dataclasses import asdict, dataclass, field
 
+
+FILM_PROJECTS_JSON_FILENAME = "data/film_projects.json"
+PERSONS_JSON_FILENAME = "data/persons.json"
+
+
+
 @dataclass
 class FilmProject:
     tmdb_id: str
@@ -112,7 +118,7 @@ class AllProjects:
             elif not person.is_director and person not in self._actors:
                 self._actors.append(person)
 
-    def get_previous_persons(self, filename_persons:str="data/person_log.json"):
+    def get_previous_persons(self, filename_persons:str=PERSONS_JSON_FILENAME):
         """Retrieve previously scraped information about directors/actors."""
         try:
             with open(filename_persons, "r") as f:
@@ -124,7 +130,7 @@ class AllProjects:
         except FileNotFoundError as e:
             print(e)
 
-    def get_previous_projects(self, filename_projects:str="data/film_project_log.json"):
+    def get_previous_projects(self, filename_projects:str=FILM_PROJECTS_JSON_FILENAME):
         """Retrieve previously scraped information about upcoming projects."""
         try:
             with open(filename_projects, "r") as f:
@@ -145,10 +151,10 @@ class AllProjects:
         person_json_content = json.dumps({person.name:person.__dict__ for person in self.persons}, indent=4)
         film_project_json_content = json.dumps({project.tmdb_id:project.__dict__ for project in self.film_projects}, indent=4)
 
-        with open("data/person_log.json", "w") as f:
+        with open(PERSONS_JSON_FILENAME, "w") as f:
             f.write(person_json_content)
 
-        with open("data/film_project_log.json", "w") as f:
+        with open(FILM_PROJECTS_JSON_FILENAME, "w") as f:
             f.write(film_project_json_content)
 
 

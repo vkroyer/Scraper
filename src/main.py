@@ -34,7 +34,7 @@ def main():
         # TODO: Remove projects that have been released
         # Scrape new upcoming projects from all persons
         for person in all_projects.persons:
-            projects = find_upcoming_projects(requests_session=session, person_id=person.tmdb_id)
+            projects = find_upcoming_projects(requests_session=session, person=person)
             new_projects = []
             for project in projects:
                 if project.tmdb_id in person.projects:
