@@ -23,14 +23,14 @@ def send_email(subject:str, content:str, to_address:str=EMAIL_RECEIVER_ADDRESS):
         smtp.send_message(msg)
 
 
-def format_one_upcoming_projects_list(name:str, projects:"list[FilmProject]"):
+def format_one_upcoming_projects_list(person: Person, projects:"list[FilmProject]"):
     """Returns a string with the name of the actor/director as a subheader and the projects with clickable titles in an ordered markdown list"""
-    sub_header = f"\n\n### {name.upper()}"
+    sub_header = f"\n\n### [{person.name.upper()}]({person.imdb_url})"
     projects_markdown = []
     for project in projects:
         with_genres = f" **{project.genres}**" if project.genres else "" # Add the list if genres if any exist
         with_synopsis = f": {project.synopsis}" if project.synopsis else "" # Add the plot description if it exists
-        projects_markdown.append(f"1. **[{project.title}]({project.url})**{with_genres}{with_synopsis}")
+        projects_markdown.append(f"1. **[{project.title}]({project.imdb_url})**{with_genres}{with_synopsis}")
     body = "\n".join(projects_markdown)
 
     return f"{sub_header}\n{body}"
@@ -49,7 +49,7 @@ def format_mail(all_projects:AllProjects, director_flag=True, actor_flag=True):
         for director in all_projects.directors:
             if len(director.projects) > 0:
                 film_projects = [project for project in all_projects.film_projects if project.tmdb_id in director.projects]
-                director_projects_body += format_one_upcoming_projects_list(director.name, film_projects)
+                director_projects_body += format_one_upcoming_projects_list(director, film_projects)
         
         if director_projects_body != "":
             final_markdown_str += f"{director_projects_header}{director_projects_body}"
@@ -61,7 +61,7 @@ def format_mail(all_projects:AllProjects, director_flag=True, actor_flag=True):
         for actor in all_projects.actors:
             if len(actor.projects) > 0:
                 film_projects = [project for project in all_projects.film_projects if project.tmdb_id in actor.projects]
-                actor_projects_body += format_one_upcoming_projects_list(actor.name, film_projects)
+                actor_projects_body += format_one_upcoming_projects_list(actor, film_projects)
         
         if actor_projects_body != "":
             final_markdown_str += f"{actor_projects_header}{actor_projects_body}"

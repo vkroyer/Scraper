@@ -10,10 +10,14 @@ PERSONS_JSON_FILENAME = "data/persons.json"
 @dataclass
 class FilmProject:
     tmdb_id: str
-    url: str
+    imdb_id: str
+    tmdb_url: str
+    imdb_url: str
     title: str
     synopsis: str
     genres: "list[str]" = field(default_factory=list)
+
+    # release_date: str = field(init=False)
     # director: str
     # stars: "list[str]" = field(default_factory=list)
 
@@ -29,7 +33,9 @@ class FilmProject:
 @dataclass
 class Person:
     tmdb_id: str
-    url: str
+    imdb_id: str
+    tmdb_url: str
+    imdb_url: str
     name: str
     is_director: bool
     is_actor: bool
@@ -44,16 +50,26 @@ class Person:
         return json.dumps(self.__dict__)
 
 
-def instantiate_person(tmdb_id:str, url:str, name:str, is_director:bool, is_actor:bool) -> Person:
+def instantiate_person(tmdb_id:str, imdb_id:str, tmdb_url:str, imdb_url:str, name:str, is_director:bool, is_actor:bool) -> Person:
     """Create an instance of a person from the id and name and is_(director/actor)."""
-    person = Person(tmdb_id=tmdb_id, url=url, name=name, is_director=is_director, is_actor=is_actor)
+    person = Person(
+        tmdb_id=tmdb_id,
+        imdb_id=imdb_id,
+        tmdb_url=tmdb_url,
+        imdb_url=imdb_url,
+        name=name,
+        is_director=is_director,
+        is_actor=is_actor
+    )
     return person
 
 def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
         tmdb_id=json_info["tmdb_id"],
-        url=json_info["url"],
+        imdb_id=json_info["imdb_id"],
+        tmdb_url=json_info["tmdb_url"],
+        imdb_url=json_info["imdb_url"],
         name=json_info["name"],
         is_director=json_info["is_director"],
         is_actor=json_info["is_actor"]
@@ -67,7 +83,9 @@ def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
         tmdb_id=json_info["tmdb_id"],
-        url=json_info["url"],
+        imdb_id=json_info["imdb_id"],
+        tmdb_url=json_info["tmdb_url"],
+        imdb_url=json_info["imdb_url"],
         title=json_info["title"],
         synopsis=json_info["synopsis"],
         genres=json_info["genres"]

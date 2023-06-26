@@ -2,11 +2,12 @@ from mail import format_mail, send_email
 from markdown import markdown
 from projects import instantiate_person, AllProjects
 from requests_session import RateLimitedSession
-from scrape import get_person_id, normalize_string, find_upcoming_projects
+from scrape import get_person_id, get_external_id_person, normalize_string, find_upcoming_projects
 from user import UserPreferences
 
 MAX_REQUESTS_PER_SECOND = 30
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
+IMDB_PERSON_URL = "https://imdb.com/name"
 
 def main():
     all_projects = AllProjects()
@@ -24,11 +25,13 @@ def main():
             if name in [person.name for person in all_projects.persons]:
                 continue
             person_id = get_person_id(requests_session=session, name=name)
-            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(name)}"
+            tmdb_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(name)}"
+            imdb_id = get_external_id_person(requests_session=session, person_id=person_id)
+            imdb_url = f"{IMDB_PERSON_URL}/{imdb_id}"
             if name in user.directors:
-                person = instantiate_person(tmdb_id=person_id, url=person_url, name=name, is_director=True, is_actor=False)
+                person = instantiate_person(tmdb_id=person_id, imdb_id=imdb_id, tmdb_url=tmdb_url, imdb_url=imdb_url, name=name, is_director=True, is_actor=False)
             elif name in user.actors:
-                person = instantiate_person(tmdb_id=person_id, url=person_url, name=name, is_director=False, is_actor=True)
+                person = instantiate_person(tmdb_id=person_id, imdb_id=imdb_id, tmdb_url=tmdb_url, imdb_url=imdb_url, name=name, is_director=False, is_actor=True)
             all_projects.add_person(person)
 
         # TODO: Remove projects that have been released
