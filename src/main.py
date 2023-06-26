@@ -5,8 +5,8 @@ from requests_session import RateLimitedSession
 from scrape import get_person_id, normalize_string, find_upcoming_projects
 from user import UserPreferences
 
+MAX_REQUESTS_PER_SECOND = 30
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
-
 
 def main():
     all_projects = AllProjects()
@@ -17,7 +17,7 @@ def main():
     user.update_actorlist()
     user.update_directorlist()
 
-    with RateLimitedSession(max_requests=30) as session:
+    with RateLimitedSession(max_requests=MAX_REQUESTS_PER_SECOND) as session:
 
         # Add new persons to the all_projects organizer
         for name in user.persons:
