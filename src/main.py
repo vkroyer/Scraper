@@ -3,9 +3,10 @@ import requests
 from mail import format_mail, send_email
 from markdown import markdown
 from projects import instantiate_person, AllProjects
-from scrape import get_person_id, find_upcoming_projects
+from scrape import get_person_id, normalize_string, find_upcoming_projects
 from user import UserPreferences
 
+TMDB_PERSON_URL = "https://www.themoviedb.org/person"
 
 
 def main():
@@ -26,7 +27,8 @@ def main():
             if director_name in [person.name for person in all_projects.directors]:
                 continue
             person_id = get_person_id(requests_session=session, name=director_name)
-            director = instantiate_person(tmdb_id=person_id, name=director_name, is_director=True, is_actor=False)
+            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(director_name)}"
+            director = instantiate_person(tmdb_id=person_id, url=person_url, name=director_name, is_director=True, is_actor=False)
             all_projects.add_person(director)
         
         # Add new actors/actresses to the all_projects organizer
@@ -34,7 +36,8 @@ def main():
             if actor_name in [person.name for person in all_projects.actors]:
                 continue
             person_id = get_person_id(requests_session=session, name=actor_name)
-            actor = instantiate_person(tmdb_id=person_id, name=actor_name, is_director=False, is_actor=True)
+            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(actor_name)}"
+            actor = instantiate_person(tmdb_id=person_id, url=person_url, name=actor_name, is_director=False, is_actor=True)
             all_projects.add_person(actor)
 
         # TODO: Remove projects that have been released
@@ -50,7 +53,9 @@ def main():
 
             all_projects.add_projects(projects=new_projects)
 
-    mail_content_markdown = format_mail(all_projects=all_projects, actor_flag=False)
+    all_projects.update_json_files()
+
+    mail_content_markdown = format_mail(all_projects=all_projects)
     mail_content_html = markdown(mail_content_markdown)
 
     subject = "Roundup of Upcoming Movies and TV Shows"

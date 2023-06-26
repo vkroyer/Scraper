@@ -25,8 +25,8 @@ class FilmProject:
 @dataclass
 class Person:
     tmdb_id: str
+    url: str
     name: str
-    url: str = field(init=False)
     is_director: bool
     is_actor: bool
     projects: "list[str]" = field(default_factory=list) # list of FilmProject ids
@@ -40,21 +40,21 @@ class Person:
         return json.dumps(self.__dict__)
 
 
-def instantiate_person(tmdb_id:str, name:str, is_director:bool, is_actor:bool) -> Person:
+def instantiate_person(tmdb_id:str, url:str, name:str, is_director:bool, is_actor:bool) -> Person:
     """Create an instance of a person from the id and name and is_(director/actor)."""
-    person = Person(tmdb_id=tmdb_id, name=name, is_director=is_director, is_actor=is_actor)
+    person = Person(tmdb_id=tmdb_id, url=url, name=name, is_director=is_director, is_actor=is_actor)
     return person
 
 def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
         tmdb_id=json_info["id"],
+        url=json_info["url"],
         name=json_info["name"],
         is_director=json_info["is_director"],
         is_actor=json_info["is_actor"]
     )
 
-    person.url = json_info["url"]
     person.projects = json_info["projects"]
 
     return person
@@ -62,10 +62,11 @@ def instansiate_previous_person(json_info:dict) -> Person:
 def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
-        id=json_info["id"],
+        tmdb_id=json_info["id"],
         url=json_info["url"],
         title=json_info["title"],
-        director=json_info["director"]
+        synopsis=json_info["synopsis"],
+        genres=json_info["genres"]
     )
 
     return film_project
@@ -142,8 +143,9 @@ class AllProjects:
 
 
     def update_json_files(self):
+        """Store all info about directors, actors/actresses and film projects in json files for later use."""
         person_json_content = json.dumps({person.name:person.__dict__ for person in self.persons}, indent=4)
-        film_project_json_content = json.dumps({project.id:project.__dict__ for project in self.film_projects}, indent=4)
+        film_project_json_content = json.dumps({project.tmdb_id:project.__dict__ for project in self.film_projects}, indent=4)
 
         with open("data/person_log.json", "w") as f:
             f.write(person_json_content)

@@ -10,9 +10,10 @@ load_dotenv(find_dotenv())
 
 API_READ_ACCESS_TOKEN = os.environ.get("API_READ_ACCESS_TOKEN")
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
-UPCOMING_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
-TMDB_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
-TMDB_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
+TMDB_PERSON_URL = "https://www.themoviedb.org/person"
+TMDB_API_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
+TMDB_API_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
+TMDB_API_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
 TMDB_GENRES_FILE = "data/genres.json"
 TMDB_PERSON_IDS_FILE = "data/person_ids.json"
 DATE_TODAY = datetime.today().date()
@@ -34,7 +35,7 @@ def get_person_id(requests_session: requests.Session, name: str) -> str:
                 return data["persons"][name] # id is the value of the name key
 
     # If the person ID is not found in the JSON file, make the API request
-    response = requests_session.get(f"{TMDB_PERSON_URL}{name}", headers=HEADERS)
+    response = requests_session.get(f"{TMDB_API_PERSON_URL}{name}", headers=HEADERS)
     data = response.json()
     if response.status_code == 200 and data["results"]:
         person_id = data["results"][0]["id"]
@@ -67,7 +68,7 @@ def get_genres_by_id(requests_session: requests.Session, genre_ids: "list[int]")
             all_genres = json.load(file)
     else:
         # Fetch the genres from the TMDB API
-        response = requests_session.get(TMDB_GENRES_URL, headers=HEADERS)
+        response = requests_session.get(TMDB_API_GENRES_URL, headers=HEADERS)
         data = response.json()
 
         if response.status_code == 200:
@@ -108,7 +109,7 @@ def find_upcoming_projects(requests_session: requests.Session, person_id: str) -
         "with_crew": person_id
     }
 
-    response = requests_session.get(UPCOMING_MOVIES_URL, params=params, headers=HEADERS)
+    response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
 
     data = response.json()  # Parse the JSON response
 
@@ -139,7 +140,7 @@ def find_upcoming_projects(requests_session: requests.Session, person_id: str) -
 if __name__ == "__main__":
 
     with requests.Session() as session:
-        person_id = get_person_id(session, "Christopher Nolan")
+        person_id = get_person_id(session, "Dwayne Johnson")
         projects = find_upcoming_projects(session, person_id)
 
         for project in projects:
