@@ -1,21 +1,28 @@
 import json
 import os
 import re
-import requests
 from datetime import datetime
 from dotenv import find_dotenv, load_dotenv
-from projects import FilmProject, Person
+from projects import FilmProject
+from requests_session import RateLimitedSession
 
 load_dotenv(find_dotenv())
 
+
+##### CONSTANTS #####
+
 API_READ_ACCESS_TOKEN = os.environ.get("API_READ_ACCESS_TOKEN")
+
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
+
 TMDB_API_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_API_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
 TMDB_API_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
+
 TMDB_GENRES_FILE = "data/genres.json"
 TMDB_PERSON_IDS_FILE = "data/person_ids.json"
+
 DATE_TODAY = datetime.today().date()
 
 HEADERS = {
@@ -24,7 +31,9 @@ HEADERS = {
 }
 
 
-def get_person_id(requests_session: requests.Session, name: str) -> str:
+
+
+def get_person_id(requests_session: RateLimitedSession, name: str) -> str:
     """Looks up the id of the director/actor on TMDb for use in future API calls with this person."""
 
     # Check if the person ID exists in the JSON file
@@ -57,7 +66,7 @@ def get_person_id(requests_session: requests.Session, name: str) -> str:
     return None
 
 
-def get_genres_by_id(requests_session: requests.Session, genre_ids: "list[int]"):
+def get_genres_by_id(requests_session: RateLimitedSession, genre_ids: "list[int]"):
     """Convert TMDb genre ids to the genre names, either from existing file or from the API."""
 
     all_genres: dict[str, str] = {}
@@ -73,6 +82,7 @@ def get_genres_by_id(requests_session: requests.Session, genre_ids: "list[int]")
 
         if response.status_code == 200:
             all_genres = {genre["id"]: genre["name"] for genre in data["genres"]}
+            
             # Save the genres to a JSON file for future use
             with open(TMDB_GENRES_FILE, "w") as file:
                 json.dump(all_genres, file, indent=4)
@@ -96,7 +106,7 @@ def normalize_string(title: str) -> str:
     return normalized_title.lower()
 
 
-def find_upcoming_projects(requests_session: requests.Session, person_id: str) -> "list[FilmProject]":
+def find_upcoming_projects(requests_session: RateLimitedSession, person_id: str) -> "list[FilmProject]":
     """Calls the API with the id of the person and returns upcoming projects with said person."""
 
     projects = []
@@ -105,7 +115,7 @@ def find_upcoming_projects(requests_session: requests.Session, person_id: str) -
         "include_adult": False,
         "include_video": False,
         "language": "en-US",
-        "sort_by": "popularity.desc",
+        "sort_by": "primary_release_date.desc",
         "with_crew": person_id
     }
 
@@ -139,8 +149,8 @@ def find_upcoming_projects(requests_session: requests.Session, person_id: str) -
 
 if __name__ == "__main__":
 
-    with requests.Session() as session:
-        person_id = get_person_id(session, "Dwayne Johnson")
+    with RateLimitedSession() as session:
+        person_id = get_person_id(session, "James Cameron")
         projects = find_upcoming_projects(session, person_id)
 
         for project in projects:

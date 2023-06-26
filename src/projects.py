@@ -1,6 +1,4 @@
 import json
-import random
-import string
 from dataclasses import asdict, dataclass, field
 
 @dataclass
@@ -48,7 +46,7 @@ def instantiate_person(tmdb_id:str, url:str, name:str, is_director:bool, is_acto
 def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
-        tmdb_id=json_info["id"],
+        tmdb_id=json_info["tmdb_id"],
         url=json_info["url"],
         name=json_info["name"],
         is_director=json_info["is_director"],
@@ -62,7 +60,7 @@ def instansiate_previous_person(json_info:dict) -> Person:
 def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
-        tmdb_id=json_info["id"],
+        tmdb_id=json_info["tmdb_id"],
         url=json_info["url"],
         title=json_info["title"],
         synopsis=json_info["synopsis"],

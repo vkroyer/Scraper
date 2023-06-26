@@ -10,9 +10,26 @@ class UserPreferences:
     def __init__(self):
         self._directors = []
         self._actors = []
+        self._persons = []
+
+    @property
+    def directors(self):
+        """Returns a list of director names."""
+        return self._directors
+    
+    @property
+    def actors(self):
+        """Returns a list of actor names."""
+        return self._actors
+    
+    @property
+    def persons(self):
+        """Returns a list of all director and actor names combined."""
+        self._persons = self._actors + self._directors
+        return self._persons
 
     def update_directorlist(self):
-        """Checks the online notepad for the latest version of a list of directors and updates the internal list in the class"""
+        """Checks the online notepad for the latest version of a list of directors and updates the internal list in the class."""
 
         directorlist_url = os.environ.get("DIRECTORLIST_URL")
 
@@ -32,14 +49,8 @@ class UserPreferences:
         directors_string = plain_text_div.text
         self._directors = [director for director in directors_string.split("\n") if director]
 
-
-    @property
-    def directors(self):
-        """Returns a list of director names"""
-        return self._directors
-
     def update_actorlist(self):
-        """Checks the online notepad for the latest version of a list of actors and updates the internal list in the class"""
+        """Checks the online notepad for the latest version of a list of actors and updates the internal list in the class."""
 
         actorlist_url = os.environ.get("ACTORLIST_URL")
 
@@ -59,10 +70,6 @@ class UserPreferences:
         actors_string = plain_text_div.text
         self._actors = [actor for actor in actors_string.split("\n") if actor]
 
-    @property
-    def actors(self):
-        """Returns a list of actor names"""
-        return self._actors
 
 
 if __name__ == "__main__":

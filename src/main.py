@@ -1,8 +1,7 @@
-import json
-import requests
 from mail import format_mail, send_email
 from markdown import markdown
 from projects import instantiate_person, AllProjects
+from requests_session import RateLimitedSession
 from scrape import get_person_id, normalize_string, find_upcoming_projects
 from user import UserPreferences
 
@@ -18,27 +17,19 @@ def main():
     user.update_actorlist()
     user.update_directorlist()
 
-    with requests.Session() as session:
+    with RateLimitedSession(max_requests=30) as session:
 
-        # TODO: Make director and actor functionality into the same if possible for tmdb
-
-        # Add new directors to the all_projects organizer
-        for director_name in user.directors:
-            if director_name in [person.name for person in all_projects.directors]:
+        # Add new persons to the all_projects organizer
+        for name in user.persons:
+            if name in [person.name for person in all_projects.persons]:
                 continue
-            person_id = get_person_id(requests_session=session, name=director_name)
-            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(director_name)}"
-            director = instantiate_person(tmdb_id=person_id, url=person_url, name=director_name, is_director=True, is_actor=False)
-            all_projects.add_person(director)
-        
-        # Add new actors/actresses to the all_projects organizer
-        for actor_name in user.actors:
-            if actor_name in [person.name for person in all_projects.actors]:
-                continue
-            person_id = get_person_id(requests_session=session, name=actor_name)
-            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(actor_name)}"
-            actor = instantiate_person(tmdb_id=person_id, url=person_url, name=actor_name, is_director=False, is_actor=True)
-            all_projects.add_person(actor)
+            person_id = get_person_id(requests_session=session, name=name)
+            person_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(name)}"
+            if name in user.directors:
+                person = instantiate_person(tmdb_id=person_id, url=person_url, name=name, is_director=True, is_actor=False)
+            elif name in user.actors:
+                person = instantiate_person(tmdb_id=person_id, url=person_url, name=name, is_director=False, is_actor=True)
+            all_projects.add_person(person)
 
         # TODO: Remove projects that have been released
         # Scrape new upcoming projects from all persons

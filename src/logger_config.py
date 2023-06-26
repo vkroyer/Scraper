@@ -5,5 +5,5 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Create a timed rotating file handler
-handler = TimedRotatingFileHandler(filename='app.log', when='midnight', backupCount=7)
+handler = TimedRotatingFileHandler(filename='app.log', when='W0', backupCount=15)
 logger.addHandler(handler)
