@@ -23,7 +23,7 @@ HEADERS = {
 }
 
 
-def get_person_id(name: str) -> str:
+def get_person_id(requests_session: requests.Session, name: str) -> str:
     """Looks up the id of the director/actor on TMDb for use in future API calls with this person."""
 
     # Check if the person ID exists in the JSON file
@@ -34,7 +34,7 @@ def get_person_id(name: str) -> str:
                 return data["persons"][name] # id is the value of the name key
 
     # If the person ID is not found in the JSON file, make the API request
-    response = requests.get(f"{TMDB_PERSON_URL}{name}", headers=HEADERS)
+    response = requests_session.get(f"{TMDB_PERSON_URL}{name}", headers=HEADERS)
     data = response.json()
     if response.status_code == 200 and data["results"]:
         person_id = data["results"][0]["id"]
@@ -56,7 +56,7 @@ def get_person_id(name: str) -> str:
     return None
 
 
-def get_genres_by_id(genre_ids: "list[int]"):
+def get_genres_by_id(requests_session: requests.Session, genre_ids: "list[int]"):
     """Convert TMDb genre ids to the genre names, either from existing file or from the API."""
 
     all_genres: dict[str, str] = {}
@@ -67,7 +67,7 @@ def get_genres_by_id(genre_ids: "list[int]"):
             all_genres = json.load(file)
     else:
         # Fetch the genres from the TMDB API
-        response = requests.get(TMDB_GENRES_URL, headers=HEADERS)
+        response = requests_session.get(TMDB_GENRES_URL, headers=HEADERS)
         data = response.json()
 
         if response.status_code == 200:
@@ -95,7 +95,7 @@ def normalize_string(title: str) -> str:
     return normalized_title.lower()
 
 
-def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
+def find_upcoming_projects(requests_session: requests.Session, person_id: str) -> "list[FilmProject]":
     """Calls the API with the id of the person and returns upcoming projects with said person."""
 
     projects = []
@@ -108,7 +108,7 @@ def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
         "with_crew": person_id
     }
 
-    response = requests.get(UPCOMING_MOVIES_URL, params=params, headers=HEADERS)
+    response = requests_session.get(UPCOMING_MOVIES_URL, params=params, headers=HEADERS)
 
     data = response.json()  # Parse the JSON response
 
@@ -127,9 +127,9 @@ def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
                 url = f"{TMDB_MOVIE_URL}/{film_id}-{normalized_title}"
 
                 # Convert genre ids to actual genres
-                genres = get_genres_by_id(genre_ids)
+                genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
 
-                projects.append(FilmProject(id=film_id, url=url, title=title, synopsis=synopsis, genres=genres))
+                projects.append(FilmProject(tmdb_id=film_id, url=url, title=title, synopsis=synopsis, genres=genres))
     else:
         print(f"Error: {data['status_message']}")
 
@@ -138,8 +138,9 @@ def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
 
 if __name__ == "__main__":
 
-    person = get_person_id("Tom Cruise")
-    projects = find_upcoming_projects(person)
+    with requests.Session() as session:
+        person_id = get_person_id(session, "Christopher Nolan")
+        projects = find_upcoming_projects(session, person_id)
 
-    for project in projects:
-        print(project.json)
+        for project in projects:
+            print(project.json)
