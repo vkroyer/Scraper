@@ -28,7 +28,8 @@ def format_one_upcoming_projects_list(name:str, projects:"list[FilmProject]"):
     sub_header = f"\n\n### {name.upper()}"
     projects_markdown = []
     for project in projects:
-        projects_markdown.append(f"1. **[{project.title}]({project.url})**")
+        with_synopsis = f": {project.synopsis}" if project.synopsis else "" # Add the plot description if it exists
+        projects_markdown.append(f"1. **[{project.title}]({project.url})**{with_synopsis}")
     body = "\n".join(projects_markdown)
 
     return f"{sub_header}\n{body}"
