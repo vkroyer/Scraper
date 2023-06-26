@@ -39,15 +39,18 @@ def get_person_id(name: str) -> str:
     if response.status_code == 200 and data["results"]:
         person_id = data["results"][0]["id"]
 
-        # Store the person ID in the JSON file for future use
-        with open(TMDB_PERSON_IDS_FILE, "a+") as file:
+        # Add the person ID to the json content
+        with open(TMDB_PERSON_IDS_FILE, "r") as file:
             try:
                 person_ids = json.load(file)
             except json.decoder.JSONDecodeError:
                 person_ids = {"persons": []}
             person_ids["persons"].append({"name": name, "id": person_id})
-            file.seek(0)
+        
+        # Write to the json file of person IDs
+        with open(TMDB_PERSON_IDS_FILE, "w") as file:
             json.dump(person_ids, file, indent=4)
+        
         return person_id
 
     return None
@@ -87,6 +90,8 @@ def normalize_string(title: str) -> str:
     normalized_title = re.sub(r"[^\w\s-]", "-", title)
     # Replace whitespace with dashes
     normalized_title = re.sub(r"\s+", "-", normalized_title)
+    # Remove any excess dashes
+    normalized_title = re.sub(r"-+", "-", normalized_title)
     return normalized_title.lower()
 
 
@@ -133,7 +138,7 @@ def find_upcoming_projects(person_id: str) -> "list[FilmProject]":
 
 if __name__ == "__main__":
 
-    person = get_person_id("Christopher Nolan")
+    person = get_person_id("Tom Cruise")
     projects = find_upcoming_projects(person)
 
     for project in projects:
