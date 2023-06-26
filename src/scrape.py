@@ -103,6 +103,8 @@ def normalize_string(title: str) -> str:
     normalized_title = re.sub(r"\s+", "-", normalized_title)
     # Remove any excess dashes
     normalized_title = re.sub(r"-+", "-", normalized_title)
+    # Remove any trailing dash
+    normalized_title = normalized_title.rstrip("-")
     return normalized_title.lower()
 
 
@@ -126,6 +128,7 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person_id: str)
     if response.status_code == 200:
         film_projects = data["results"]
         for film_project in film_projects:
+            # Filter only projects that doesn't have a release date or that has a release date in the future
             release_date = film_project.get("release_date")
             if not release_date or datetime.strptime(release_date, "%Y-%m-%d").date() > DATE_TODAY:
                 title = film_project["title"]
