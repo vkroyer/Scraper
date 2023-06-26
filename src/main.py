@@ -3,7 +3,7 @@ import requests
 from mail import format_mail, send_email
 from markdown import markdown
 from projects import instantiate_person, AllProjects
-from scrape import Scraper
+from scrape import get_person_id, find_upcoming_projects
 from user import UserPreferences
 
 
@@ -18,30 +18,35 @@ def main():
     user.update_directorlist()
 
     with requests.Session() as session:
-        scraper = Scraper(session=session)
 
+        # TODO: Make director and actor functionality into the same if possible for tmdb
+
+        # Add new directors to the all_projects organizer
         for director_name in user.directors:
             if director_name in [person.name for person in all_projects.directors]:
                 continue
-            director = instantiate_person(scraper=scraper, name=director_name, is_director=True, is_actor=False)
+            person_id = get_person_id(requests_session=session, name=director_name)
+            director = instantiate_person(tmdb_id=person_id, name=director_name, is_director=True, is_actor=False)
             all_projects.add_person(director)
         
+        # Add new actors/actresses to the all_projects organizer
         for actor_name in user.actors:
             if actor_name in [person.name for person in all_projects.actors]:
                 continue
-            actor = instantiate_person(scraper=scraper, name=actor_name, is_director=False, is_actor=True)
+            person_id = get_person_id(requests_session=session, name=actor_name)
+            actor = instantiate_person(tmdb_id=person_id, name=actor_name, is_director=False, is_actor=True)
             all_projects.add_person(actor)
 
         # TODO: Remove projects that have been released
         # Scrape new upcoming projects from all persons
         for person in all_projects.persons:
-            projects = scraper.get_projects(person)
+            projects = find_upcoming_projects(requests_session=session, person_id=person.tmdb_id)
             new_projects = []
             for project in projects:
-                if project.id in person.projects:
+                if project.tmdb_id in person.projects:
                     continue
                 new_projects.append(project)
-                person.projects.append(project.id)
+                person.projects.append(project.tmdb_id)
 
             all_projects.add_projects(projects=new_projects)
 

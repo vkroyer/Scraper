@@ -46,7 +46,7 @@ def format_mail(all_projects:AllProjects, director_flag=True, actor_flag=True):
 
         for director in all_projects.directors:
             if len(director.projects) > 0:
-                film_projects = [project for project in all_projects.film_projects if project.id in director.projects]
+                film_projects = [project for project in all_projects.film_projects if project.tmdb_id in director.projects]
                 director_projects_body += format_one_upcoming_projects_list(director.name, film_projects)
         
         if director_projects_body != "":
@@ -58,7 +58,7 @@ def format_mail(all_projects:AllProjects, director_flag=True, actor_flag=True):
 
         for actor in all_projects.actors:
             if len(actor.projects) > 0:
-                film_projects = [project for project in all_projects.film_projects if project.id in actor.projects]
+                film_projects = [project for project in all_projects.film_projects if project.tmdb_id in actor.projects]
                 actor_projects_body += format_one_upcoming_projects_list(actor.name, film_projects)
         
         if actor_projects_body != "":

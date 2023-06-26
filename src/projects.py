@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 
 @dataclass
 class FilmProject:
-    id: str
+    tmdb_id: str
     url: str
     title: str
     synopsis: str
