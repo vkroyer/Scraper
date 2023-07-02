@@ -93,7 +93,7 @@ def instansiate_previous_film_project(json_info:dict) -> FilmProject:
 
     return film_project
 
-class AllProjects:
+class ProjectOrganizer:
     """Class for containing all instances of dataclasses FilmProject and Person"""
 
     def __init__(self):
@@ -177,6 +177,6 @@ class AllProjects:
 
 
 if __name__ == "__main__":
-    projs = AllProjects()
+    projs = ProjectOrganizer()
     projs.get_previous_persons()
     projs.get_previous_projects()

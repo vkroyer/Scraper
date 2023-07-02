@@ -1,4 +1,6 @@
+import json
 import os
+from projects import ProjectOrganizer
 from requests_session import RateLimitedSession
 from dotenv import load_dotenv, find_dotenv
 
@@ -6,8 +8,12 @@ load_dotenv(find_dotenv())
 
 NOTION_API_TOKEN = os.environ.get("NOTION_API_TOKEN")
 PERSON_LIST_DATABASE_ID = os.environ.get("PERSON_LIST_DATABASE_ID")
+UPCOMING_PROJECTS_DATABASE_ID = os.environ.get("UPCOMING_PROJECTS_DATABASE_ID")
+RELEASED_PROJECTS_DATABASE_ID = os.environ.get("RELEASED_PROJECTS_DATABASE_ID")
 
-GET_DATABASE_URL = f"https://api.notion.com/v1/databases/{PERSON_LIST_DATABASE_ID}/query"
+GET_PERSON_DATABASE_URL = f"https://api.notion.com/v1/databases/{PERSON_LIST_DATABASE_ID}/query"
+GET_UPCOMING_DATABASE_URL = f"https://api.notion.com/v1/databases/{UPCOMING_PROJECTS_DATABASE_ID}/query"
+GET_RELEASED_DATABASE_URL = f"https://api.notion.com/v1/databases/{RELEASED_PROJECTS_DATABASE_ID}/query"
 CREATE_PAGE_URL = f"https://api.notion.com/v1/pages"
 
 HEADERS = {
@@ -17,23 +23,15 @@ HEADERS = {
     "content-type": "application/json"
 }
 
-# def read_database(session: RateLimitedSession):
-#     url = GET_DATABASE_URL
-#     payload = { "page_size": 100 }
-#     response = session.post(url, json=payload, headers=HEADERS)
+def read_database(session: RateLimitedSession, url: str = GET_PERSON_DATABASE_URL):
+    payload = { "page_size": 100 }
+    response = session.post(url, json=payload, headers=HEADERS)
 
-#     data = response.json()
-#     for i, result in enumerate(data["results"], start=1):
-#         try:
-#             properties = result["properties"]
-#             name = properties["Name"]["title"][0]["text"]["content"]
-#             tags = [tag["name"].lower() for tag in properties["Tags"]["multi_select"]]
-#             formatted_tags = f"Is a {' and '.join(tags)}."
-#             imdb_url = properties["IMDb URL"]["url"]
-#             tmdb_url = properties["TMDb URL"]["url"]
-#             print(f"\nPERSON {i}: {name}\n{formatted_tags}\nIMDb: {imdb_url}\nTMDb: {tmdb_url}\n")
-#         except IndexError:
-#             pass
+    data = response.json()
+
+    with open("tests/notion_upcoming_json.json", "w") as f:
+        json.dump(data, f)
+
 
 def create_page_in_person_database(session: RateLimitedSession, data: dict):
     """Creates an entry in the Notion database for directors/actors.
@@ -57,9 +55,11 @@ def create_page_in_person_database(session: RateLimitedSession, data: dict):
     return response
 
 
+def update_notion_persons():
+
+
 def main():
-    from projects import AllProjects
-    project_organizer = AllProjects()
+    project_organizer = ProjectOrganizer()
     project_organizer.get_previous_persons()
 
     with RateLimitedSession(max_requests=3) as session:
