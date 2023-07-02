@@ -11,7 +11,7 @@ load_dotenv(find_dotenv())
 
 ##### CONSTANTS #####
 
-API_READ_ACCESS_TOKEN = os.environ.get("API_READ_ACCESS_TOKEN")
+TMDB_API_TOKEN = os.environ.get("TMDB_API_TOKEN")
 
 IMDB_MOVIE_URL = "https://imdb.com/title"
 
@@ -30,7 +30,7 @@ DATE_TODAY = datetime.today().date()
 
 HEADERS = {
     "accept": "application/json",
-    "Authorization": f"Bearer {API_READ_ACCESS_TOKEN}"
+    "Authorization": f"Bearer {TMDB_API_TOKEN}"
 }
 
 
@@ -51,13 +51,15 @@ def normalize_string(title: str) -> str:
 
 def get_person_id(requests_session: RateLimitedSession, name: str) -> str:
     """Looks up the id of the director/actor on TMDb for use in future API calls with this person."""
+    person_id = ""
 
     response = requests_session.get(f"{TMDB_API_PERSON_URL}{name}", headers=HEADERS)
+
     data = response.json()
     if response.status_code == 200 and data["results"]:
         person_id = data["results"][0]["id"]
         
-        return person_id
+    return person_id
 
 
 def get_external_id_person(requests_session: RateLimitedSession, person_id: str) -> str:
@@ -67,8 +69,8 @@ def get_external_id_person(requests_session: RateLimitedSession, person_id: str)
 
     response = requests_session.get(external_ids_url, headers=HEADERS)
 
+    data = response.json()
     if response.status_code == 200:
-        data = response.json()
         imdb_id = data["imdb_id"]
     else:
         print(f"Error: {data['status_message']}")
@@ -83,8 +85,8 @@ def get_external_id_project(requests_session: RateLimitedSession, project_id: st
 
     response = requests_session.get(external_ids_url, headers=HEADERS)
 
+    data = response.json()
     if response.status_code == 200:
-        data = response.json()
         imdb_id = data["imdb_id"]
     else:
         print(f"Error: {data['status_message']}")
