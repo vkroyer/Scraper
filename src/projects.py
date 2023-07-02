@@ -1,43 +1,45 @@
 import json
-import random
-import string
 from dataclasses import asdict, dataclass, field
 
-def generate_id() -> str:
-    chars = string.ascii_letters + string.digits + string.punctuation
-    return "".join(random.choices(chars, k=16))
+
+FILM_PROJECTS_JSON_FILENAME = "data/film_projects.json"
+PERSONS_JSON_FILENAME = "data/persons.json"
+
+
 
 @dataclass
 class FilmProject:
-    id: str = field(init=False, default_factory=generate_id)
-    url: str
+    tmdb_id: str
+    imdb_id: str
+    tmdb_url: str
+    imdb_url: str
     title: str
-    director: str
-    # synopsis: str
-    # genres: "list[str]" = field(default_factory=list)
+    synopsis: str
+    genres: "list[str]" = field(default_factory=list)
+
+    # release_date: str = field(init=False)
+    # director: str
     # stars: "list[str]" = field(default_factory=list)
 
     @property
     def __dict__(self):
         return asdict(self)
-
+    
     @property
     def json(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(self.__dict__, indent=4)
 
 
 @dataclass
 class Person:
-    id: str = field(init=False, default_factory=generate_id)
+    tmdb_id: str
+    imdb_id: str
+    tmdb_url: str
+    imdb_url: str
     name: str
-    name_url_ready: str = field(init=False)
-    url: str = field(init=False)
     is_director: bool
     is_actor: bool
     projects: "list[str]" = field(default_factory=list) # list of FilmProject ids
-
-    def __post_init__(self):
-        self.name_url_ready = "+".join(self.name.split()).lower()
 
     @property
     def __dict__(self):
@@ -48,22 +50,31 @@ class Person:
         return json.dumps(self.__dict__)
 
 
-def instantiate_person(scraper, name:str, is_director:bool, is_actor:bool) -> Person:
-    """Create an instance of a person from just the name and is_(director/actor)."""
-    person = Person(name=name, is_director=is_director, is_actor=is_actor)
-    person.url = scraper.get_IMDb_page_url(name_url_ready=person.name_url_ready)
+def instantiate_person(tmdb_id:str, imdb_id:str, tmdb_url:str, imdb_url:str, name:str, is_director:bool, is_actor:bool) -> Person:
+    """Create an instance of a person from the id and name and is_(director/actor)."""
+    person = Person(
+        tmdb_id=tmdb_id,
+        imdb_id=imdb_id,
+        tmdb_url=tmdb_url,
+        imdb_url=imdb_url,
+        name=name,
+        is_director=is_director,
+        is_actor=is_actor
+    )
     return person
 
 def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
+        tmdb_id=json_info["tmdb_id"],
+        imdb_id=json_info["imdb_id"],
+        tmdb_url=json_info["tmdb_url"],
+        imdb_url=json_info["imdb_url"],
         name=json_info["name"],
         is_director=json_info["is_director"],
         is_actor=json_info["is_actor"]
     )
 
-    person.id = json_info["id"]
-    person.url = json_info["url"]
     person.projects = json_info["projects"]
 
     return person
@@ -71,11 +82,14 @@ def instansiate_previous_person(json_info:dict) -> Person:
 def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
-        url=json_info["url"],
+        tmdb_id=json_info["tmdb_id"],
+        imdb_id=json_info["imdb_id"],
+        tmdb_url=json_info["tmdb_url"],
+        imdb_url=json_info["imdb_url"],
         title=json_info["title"],
-        director=json_info["director"]
+        synopsis=json_info["synopsis"],
+        genres=json_info["genres"]
     )
-    film_project.id = json_info["id"]
 
     return film_project
 
@@ -122,7 +136,7 @@ class AllProjects:
             elif not person.is_director and person not in self._actors:
                 self._actors.append(person)
 
-    def get_previous_persons(self, filename_persons:str="data/person_log.json"):
+    def get_previous_persons(self, filename_persons:str=PERSONS_JSON_FILENAME):
         """Retrieve previously scraped information about directors/actors."""
         try:
             with open(filename_persons, "r") as f:
@@ -134,7 +148,7 @@ class AllProjects:
         except FileNotFoundError as e:
             print(e)
 
-    def get_previous_projects(self, filename_projects:str="data/film_project_log.json"):
+    def get_previous_projects(self, filename_projects:str=FILM_PROJECTS_JSON_FILENAME):
         """Retrieve previously scraped information about upcoming projects."""
         try:
             with open(filename_projects, "r") as f:
@@ -149,6 +163,17 @@ class AllProjects:
         except FileNotFoundError as e:
             print(e)
 
+
+    def update_json_files(self):
+        """Store all info about directors, actors/actresses and film projects in json files for later use."""
+        person_json_content = json.dumps({person.name:person.__dict__ for person in self.persons}, indent=4)
+        film_project_json_content = json.dumps({project.tmdb_id:project.__dict__ for project in self.film_projects}, indent=4)
+
+        with open(PERSONS_JSON_FILENAME, "w") as f:
+            f.write(person_json_content)
+
+        with open(FILM_PROJECTS_JSON_FILENAME, "w") as f:
+            f.write(film_project_json_content)
 
 
 if __name__ == "__main__":
