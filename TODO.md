@@ -3,7 +3,7 @@
 - Include more details for each upcoming project
     - Release year if applicable
     - In production status (filmin, pre-production, etc)
-- Include picture of director/actor beside their name in the subheader
+- Include picture of director/actor beside their name in the Notion database (https://developers.notion.com/reference/file-object)
 - Make a bash script or something that runs the python script e.g. every week on a Raspberry Pi
 - Check if any of the upcoming projects in the json file has been released
 
