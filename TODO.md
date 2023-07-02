@@ -1,9 +1,6 @@
 # TODO
 
-- Change structure of dictionary / json to use a dictionary for each project instead of potentially a bunch of lists
 - Include more details for each upcoming project
-    - Genres
-    - Plot synopsis
     - Release year if applicable
     - In production status (filmin, pre-production, etc)
 - Include picture of director/actor beside their name in the subheader
@@ -16,5 +13,3 @@
 
 ## Further down the road
 
-- Login to IMDb with the Python code
-- Add all or specific upcoming titles to a list on my IMDb user
