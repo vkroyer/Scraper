@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from projects import instantiate_person, Person, ProjectOrganizer
+from projects import instantiate_person, Person
 from requests_session import RateLimitedSession
 from dotenv import load_dotenv, find_dotenv
 
@@ -31,6 +31,7 @@ class NotionUpdater():
     def __init__(self, session: RateLimitedSession) -> None:
         self._session = session
         self._person_list: "list[Person]" = []
+        self._name_list: "list[str]" = []
         self._upcoming_list = []
         self._released_list = []
 
@@ -113,6 +114,7 @@ class NotionUpdater():
                 is_actor=is_actor
             )
             self._person_list.append(person)
+            self._name_list.append(name)
 
     def update_upcoming_list(self):
         """Get all upcoming projects from Notion database."""
@@ -121,6 +123,35 @@ class NotionUpdater():
     def update_released_list(self):
         """Get all released projects from Notion database."""
         ...
+
+
+    def add_persons_to_database(self, persons: "list[Person]"):
+        for person in persons:
+            # Don't add person that's already in the Notion database
+            if person.name in self._name_list:
+                continue
+
+            if person.is_director and not person.is_actor:
+                tag = [{"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"}]
+            elif not person.is_director and person.is_actor:
+                tag = [{'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}]
+            elif person.is_director and person.is_actor:
+                tag = [
+                    {"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"},
+                    {'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}
+                ]
+            else:
+                tag = []
+            
+            data = {
+                "Name": {"title": [{"text": {"content": person.name}}]},
+                "Tags": {"multi_select": tag},
+                "IMDb URL": {"url": person.imdb_url},
+                "TMDb URL": {"url": person.tmdb_url}
+            }
+
+            response = self.create_page_in_person_database(data=data)
+        
 
     def create_page_in_person_database(self, data: dict):
         """Creates an entry in the Notion database for directors/actors.
@@ -146,36 +177,10 @@ class NotionUpdater():
     
 
 def main():
-    # project_organizer = ProjectOrganizer()
-    # project_organizer.get_previous_persons()
-
     with RateLimitedSession(max_requests=3) as session:
-
         notion_updater = NotionUpdater(session=session)
         # notion_updater.update_json_files()
         notion_updater.update_person_list()
-
-        # for person in project_organizer.persons:
-
-        #     if person.is_director and not person.is_actor:
-        #         tag = [{"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"}]
-        #     elif not person.is_director and person.is_actor:
-        #         tag = [{'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}]
-        #     elif person.is_director and person.is_actor:
-        #         tag = [
-        #             {"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"},
-        #             {'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}
-        #         ]
-            
-        #     data = {
-        #         "Name": {"title": [{"text": {"content": person.name}}]},
-        #         "Tags": {"multi_select": tag},
-        #         "IMDb URL": {"url": person.imdb_url},
-        #         "TMDb URL": {"url": person.tmdb_url}
-        #     }
-
-        #     response = notion_updater.create_page_in_person_database(data=data)
-        #     print(response.status_code)
 
 
 if __name__ == "__main__":
