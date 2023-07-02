@@ -34,6 +34,21 @@ class NotionUpdater():
         self._upcoming_list = []
         self._released_list = []
 
+    @property
+    def person_list(self):
+        self.update_person_list()
+        return self._person_list
+    
+    @property
+    def upcoming_list(self):
+        self.update_upcoming_list()
+        return self._upcoming_list
+    
+    @property
+    def released_list(self):
+        self.update_released_list()
+        return self._released_list
+
     def read_database(self, url: str = GET_PERSON_DATABASE_URL):
         payload = { "page_size": 100 }
         response = self._session.post(url, json=payload, headers=HEADERS)
@@ -98,6 +113,14 @@ class NotionUpdater():
                 is_actor=is_actor
             )
             self._person_list.append(person)
+
+    def update_upcoming_list(self):
+        """Get all upcoming projects from Notion database."""
+        ...
+
+    def update_released_list(self):
+        """Get all released projects from Notion database."""
+        ...
 
     def create_page_in_person_database(self, data: dict):
         """Creates an entry in the Notion database for directors/actors.
