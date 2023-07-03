@@ -19,7 +19,7 @@ class Person:
 
     @property
     def json(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(self.__dict__, indent=2)
 
 @dataclass
 class FilmProject:
@@ -42,7 +42,7 @@ class FilmProject:
     
     @property
     def json(self):
-        return json.dumps(self.__dict__, indent=4)
+        return json.dumps(self.__dict__, indent=2)
 
 
 def instantiate_person(
