@@ -1,35 +1,6 @@
 import json
 from dataclasses import asdict, dataclass, field
 
-
-FILM_PROJECTS_JSON_FILENAME = "data/film_projects.json"
-PERSONS_JSON_FILENAME = "data/persons.json"
-
-
-
-@dataclass
-class FilmProject:
-    tmdb_id: str
-    imdb_id: str
-    tmdb_url: str
-    imdb_url: str
-    title: str
-    synopsis: str
-    genres: "list[str]" = field(default_factory=list)
-
-    # release_date: str = field(init=False)
-    # director: str
-    # stars: "list[str]" = field(default_factory=list)
-
-    @property
-    def __dict__(self):
-        return asdict(self)
-    
-    @property
-    def json(self):
-        return json.dumps(self.__dict__, indent=4)
-
-
 @dataclass
 class Person:
     notion_page_id: str
@@ -49,6 +20,29 @@ class Person:
     @property
     def json(self):
         return json.dumps(self.__dict__)
+
+@dataclass
+class FilmProject:
+    associated_person: Person
+    tmdb_id: str
+    imdb_id: str
+    tmdb_url: str
+    imdb_url: str
+    title: str
+    synopsis: str
+    genres: "list[str]" = field(default_factory=list)
+
+    # release_date: str = field(init=False)
+    # director: str
+    # stars: "list[str]" = field(default_factory=list)
+
+    @property
+    def __dict__(self):
+        return asdict(self)
+    
+    @property
+    def json(self):
+        return json.dumps(self.__dict__, indent=4)
 
 
 def instantiate_person(
@@ -76,6 +70,7 @@ def instantiate_person(
 def instansiate_previous_person(json_info:dict) -> Person:
     """Create an instance of a person with previously found info about the person."""
     person = Person(
+        notion_page_id=json_info["notion_page_id"],
         tmdb_id=json_info["tmdb_id"],
         imdb_id=json_info["imdb_id"],
         tmdb_url=json_info["tmdb_url"],
@@ -92,6 +87,7 @@ def instansiate_previous_person(json_info:dict) -> Person:
 def instansiate_previous_film_project(json_info:dict) -> FilmProject:
     """Create an instance of a film project with previously found info about the film project."""
     film_project = FilmProject(
+        associated_person=json_info["associated_person"],
         tmdb_id=json_info["tmdb_id"],
         imdb_id=json_info["imdb_id"],
         tmdb_url=json_info["tmdb_url"],
@@ -109,8 +105,6 @@ class ProjectOrganizer:
     def __init__(self):
         self._film_projects: "list[FilmProject]" = []
         self._persons: "list[Person]" = []
-        self._directors: "list[Person]" = []
-        self._actors: "list[Person]" = []
 
     @property
     def film_projects(self):
@@ -119,74 +113,15 @@ class ProjectOrganizer:
     @property
     def persons(self):
         return self._persons
-    
-    @property
-    def directors(self):
-        self.update_lists()
-        return self._directors
-    
-    @property
-    def actors(self):
-        self.update_lists()
-        return self._actors
 
-    def add_projects(self, projects:"list[FilmProject]"):
+    def add_projects(self, projects: "list[FilmProject]"):
         for project in projects:
             self._film_projects.append(project)
 
-    def add_person(self, person:Person):
+    def add_person(self, person: Person):
         self._persons.append(person)
-        self._directors.append(person) if person.is_director else self._actors.append(person)
-
-    def update_lists(self):
-        """Updates list of actors and directors based on list of persons"""
-        for person in self._persons:
-            if person.is_director and person not in self._directors:
-                self._directors.append(person)
-            elif not person.is_director and person not in self._actors:
-                self._actors.append(person)
-
-    def get_previous_persons(self, filename_persons:str=PERSONS_JSON_FILENAME):
-        """Retrieve previously scraped information about directors/actors."""
-        try:
-            with open(filename_persons, "r") as f:
-                person_dict = json.load(f)
-                for person_info in person_dict.values():
-                    person = instansiate_previous_person(json_info=person_info)
-                    self.add_person(person)
-
-        except FileNotFoundError as e:
-            print(e)
-
-    def get_previous_projects(self, filename_projects:str=FILM_PROJECTS_JSON_FILENAME):
-        """Retrieve previously scraped information about upcoming projects."""
-        try:
-            with open(filename_projects, "r") as f:
-                project_dict = json.load(f)
-                film_projects = []
-                for project_info in project_dict.values():
-                    project = instansiate_previous_film_project(json_info=project_info)
-                    film_projects.append(project)
-                    
-                self.add_projects(film_projects)
-
-        except FileNotFoundError as e:
-            print(e)
-
-
-    def update_json_files(self):
-        """Store all info about directors, actors/actresses and film projects in json files for later use."""
-        person_json_content = json.dumps({person.name:person.__dict__ for person in self.persons}, indent=4)
-        film_project_json_content = json.dumps({project.tmdb_id:project.__dict__ for project in self.film_projects}, indent=4)
-
-        with open(PERSONS_JSON_FILENAME, "w") as f:
-            f.write(person_json_content)
-
-        with open(FILM_PROJECTS_JSON_FILENAME, "w") as f:
-            f.write(film_project_json_content)
 
 
 if __name__ == "__main__":
+    ...
     projs = ProjectOrganizer()
-    projs.get_previous_persons()
-    projs.get_previous_projects()
