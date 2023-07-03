@@ -7,11 +7,13 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
+# ENVIRONMENT VARIABLES
 NOTION_API_TOKEN = os.environ.get("NOTION_API_TOKEN")
 PERSON_LIST_DATABASE_ID = os.environ.get("PERSON_LIST_DATABASE_ID")
 UPCOMING_PROJECTS_DATABASE_ID = os.environ.get("UPCOMING_PROJECTS_DATABASE_ID")
 RELEASED_PROJECTS_DATABASE_ID = os.environ.get("RELEASED_PROJECTS_DATABASE_ID")
 
+# API ENDPOINTS
 GET_PERSON_DATABASE_URL = f"https://api.notion.com/v1/databases/{PERSON_LIST_DATABASE_ID}/query"
 GET_UPCOMING_DATABASE_URL = f"https://api.notion.com/v1/databases/{UPCOMING_PROJECTS_DATABASE_ID}/query"
 GET_RELEASED_DATABASE_URL = f"https://api.notion.com/v1/databases/{RELEASED_PROJECTS_DATABASE_ID}/query"
@@ -24,6 +26,10 @@ HEADERS = {
     "content-type": "application/json"
 }
 
+# FILENAMES
+NOTION_UPCOMING_MULTISELECT_FILENAME = "notion_multiselect_genres/upcoming_genre_tags.json"
+NOTION_RELEASED_MULTISELECT_FILENAME = "notion_multiselect_genres/released_genre_tags.json"
+
 
 class NotionUpdater():
     """Class employing functionality for reading from and writing to Notion databases."""
@@ -34,6 +40,8 @@ class NotionUpdater():
         self._name_list: "list[str]" = []
         self._upcoming_list = []
         self._released_list = []
+        self._upcoming_multiselect_options = {}
+        self._released_multiselect_options = {}
 
     @property
     def person_list(self):
@@ -49,8 +57,23 @@ class NotionUpdater():
     def released_list(self):
         self.update_released_list()
         return self._released_list
+    
+    @property
+    def upcoming_multiselect_options(self):
+        if self._upcoming_multiselect_options == {}:
+            with open(NOTION_UPCOMING_MULTISELECT_FILENAME, "r") as f:
+                self._upcoming_multiselect_options = json.load(f)
+        return self._upcoming_multiselect_options
+    
+    @property
+    def released_multiselect_options(self):
+        if self._released_multiselect_options == {}:
+            with open(NOTION_RELEASED_MULTISELECT_FILENAME, "r") as f:
+                self._released_multiselect_options = json.load(f)
+        return self._released_multiselect_options
 
     def read_database(self, url: str = GET_PERSON_DATABASE_URL):
+        """Return all pages in a Notion database located at `url`."""
         payload = { "page_size": 100 }
         response = self._session.post(url, json=payload, headers=HEADERS)
         data = response.json()
@@ -179,7 +202,7 @@ class NotionUpdater():
     
 
     def add_upcoming_projects_to_database(self, projects: "list[FilmProject]"):
-        """"""
+        """Add an upcoming project to the database with a relation link to the person database."""
 
 
     def create_page_in_upcoming_database(self, data: dict):
@@ -230,7 +253,8 @@ def main():
     with RateLimitedSession(max_requests=3) as session:
         notion_updater = NotionUpdater(session=session)
         # notion_updater.update_json_files()
-        notion_updater.update_person_list()
+        # notion_updater.update_person_list()
+        print(notion_updater.upcoming_multiselect_options)
 
 
 if __name__ == "__main__":
