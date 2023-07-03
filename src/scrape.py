@@ -164,8 +164,17 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
 
                 # Convert genre ids to actual genres
                 genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
-
-                projects.append(FilmProject(tmdb_id=film_id, tmdb_url=tmdb_url, imdb_url=imdb_url, title=title, synopsis=synopsis, genres=genres, imdb_id=imdb_id))
+                project = FilmProject(
+                    associated_person=person,
+                    tmdb_id=film_id,
+                    imdb_id=imdb_id,
+                    tmdb_url=tmdb_url,
+                    imdb_url=imdb_url,
+                    title=title,
+                    synopsis=synopsis,
+                    genres=genres
+                )
+                projects.append(project)
     else:
         print(f"Error: {data['status_message']}")
 
@@ -173,11 +182,11 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
 
 
 if __name__ == "__main__":
+    ...
+    # with RateLimitedSession() as session:
+    #     person_id = get_person_id(session, "James Cameron")
+    #     person = Person(person_id, "", "", "James Cameron", is_director=True, is_actor=False)
+    #     projects = find_upcoming_projects(session, person)
 
-    with RateLimitedSession() as session:
-        person_id = get_person_id(session, "James Cameron")
-        person = Person(person_id, "", "", "James Cameron", is_director=True, is_actor=False)
-        projects = find_upcoming_projects(session, person)
-
-        for project in projects:
-            print(project.json)
+    #     for project in projects:
+            # print(project.json)
