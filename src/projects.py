@@ -32,6 +32,7 @@ class FilmProject:
 
 @dataclass
 class Person:
+    notion_page_id: str
     tmdb_id: str
     imdb_id: str
     tmdb_url: str
@@ -50,9 +51,18 @@ class Person:
         return json.dumps(self.__dict__)
 
 
-def instantiate_person(tmdb_id:str, imdb_id:str, tmdb_url:str, imdb_url:str, name:str, is_director:bool, is_actor:bool) -> Person:
+def instantiate_person(
+        notion_page_id:str,
+        tmdb_id:str,
+        imdb_id:str,
+        tmdb_url:str,
+        imdb_url:str,
+        name:str,
+        is_director:bool,
+        is_actor:bool) -> Person:
     """Create an instance of a person from the id and name and is_(director/actor)."""
     person = Person(
+        notion_page_id=notion_page_id,
         tmdb_id=tmdb_id,
         imdb_id=imdb_id,
         tmdb_url=tmdb_url,

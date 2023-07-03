@@ -1,9 +1,9 @@
 from mail import format_mail, send_email
 from markdown import markdown
+from notion_class import NotionUpdater
 from projects import instantiate_person, ProjectOrganizer
 from requests_session import RateLimitedSession
 from scrape import get_person_id, get_external_id_person, normalize_string, find_upcoming_projects
-from user import UserPreferences
 
 MAX_REQUESTS_PER_SECOND = 30
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
@@ -14,24 +14,15 @@ def main():
     project_organizer.get_previous_persons()
     project_organizer.get_previous_projects()
 
-    user = UserPreferences()
-    user.update_actorlist()
-    user.update_directorlist()
-
     with RateLimitedSession(max_requests=MAX_REQUESTS_PER_SECOND) as session:
+        notion_updater = NotionUpdater(session=session)
+        notion_updater.update_person_list()
 
         # Add new persons to the project organizer
-        for name in user.persons:
-            if name in [person.name for person in project_organizer.persons]:
+        for person in notion_updater.person_list:
+            name = person.name
+            if name in [p.name for p in project_organizer.persons]:
                 continue
-            person_id = get_person_id(requests_session=session, name=name)
-            tmdb_url = f"{TMDB_PERSON_URL}/{person_id}-{normalize_string(name)}"
-            imdb_id = get_external_id_person(requests_session=session, person_id=person_id)
-            imdb_url = f"{IMDB_PERSON_URL}/{imdb_id}"
-            if name in user.directors:
-                person = instantiate_person(tmdb_id=person_id, imdb_id=imdb_id, tmdb_url=tmdb_url, imdb_url=imdb_url, name=name, is_director=True, is_actor=False)
-            elif name in user.actors:
-                person = instantiate_person(tmdb_id=person_id, imdb_id=imdb_id, tmdb_url=tmdb_url, imdb_url=imdb_url, name=name, is_director=False, is_actor=True)
             project_organizer.add_person(person)
 
         # TODO: Remove projects that have been released

@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from projects import instantiate_person, Person
+from projects import FilmProject, instantiate_person, Person
 from requests_session import RateLimitedSession
 from dotenv import load_dotenv, find_dotenv
 
@@ -82,6 +82,8 @@ class NotionUpdater():
         """Get all persons from Notion database. Used later to ensure film projects from newly added people are found."""
         results = self.read_database(url=GET_PERSON_DATABASE_URL)
         for result in results:
+            page_id = result["id"]
+
             properties = result["properties"]
 
             name = properties["Name"]["title"][0]["plain_text"]
@@ -105,6 +107,7 @@ class NotionUpdater():
             tmdb_id = re.sub(tmdb_id_regex, r"\1", tmdb_url)
 
             person = instantiate_person(
+                notion_page_id=page_id,
                 tmdb_id=tmdb_id,
                 imdb_id=imdb_id,
                 tmdb_url=tmdb_url,
@@ -173,7 +176,54 @@ class NotionUpdater():
         payload = {"parent": {"database_id": PERSON_LIST_DATABASE_ID}, "properties": data}
         response = self._session.post(url, headers=HEADERS, json=payload)
         return response
+    
 
+    def add_upcoming_projects_to_database(self, projects: "list[FilmProject]"):
+        """"""
+
+
+    def create_page_in_upcoming_database(self, data: dict):
+        """Creates an entry in the Notion database for an upcoming project.
+        
+        data must follow the format:
+            data = {
+                "Name": {"title": [{"text": {"content": <insert name>}}]},
+                "Tags": {"multi_select": [<tag>]},
+                "IMDb URL": {"url": <insert url>},
+                "TMDb URL": {"url": <insert url>}
+            }
+
+            where tag is a list of either one or both of the following:
+                {"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"},
+                {'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}
+        """
+
+        url = CREATE_PAGE_URL
+        payload = {"parent": {"database_id": PERSON_LIST_DATABASE_ID}, "properties": data}
+        response = self._session.post(url, headers=HEADERS, json=payload)
+        return response
+
+
+    def create_page_in_released_database(self, data: dict):
+        """Creates an entry in the Notion database for directors/actors.
+        
+        data must follow the format:
+            data = {
+                "Name": {"title": [{"text": {"content": <insert name>}}]},
+                "Tags": {"multi_select": [<tag>]},
+                "IMDb URL": {"url": <insert url>},
+                "TMDb URL": {"url": <insert url>}
+            }
+
+            where tag is a list of either one or both of the following:
+                {"id": "e89ad1f4-1d07-4918-932a-01ba3ad00ac0", "name": "Director", "color": "green"},
+                {'id': 'b758d37a-dfba-4038-9773-3cf384878e7e', 'name': 'Actor', 'color': 'blue'}
+        """
+
+        url = CREATE_PAGE_URL
+        payload = {"parent": {"database_id": PERSON_LIST_DATABASE_ID}, "properties": data}
+        response = self._session.post(url, headers=HEADERS, json=payload)
+        return response
     
 
 def main():
