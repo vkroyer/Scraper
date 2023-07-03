@@ -11,8 +11,6 @@ IMDB_PERSON_URL = "https://imdb.com/name"
 
 def main():
     project_organizer = ProjectOrganizer()
-    project_organizer.get_previous_persons()
-    project_organizer.get_previous_projects()
 
     with RateLimitedSession(max_requests=MAX_REQUESTS_PER_SECOND) as session:
         notion_updater = NotionUpdater(session=session)
@@ -38,7 +36,6 @@ def main():
 
             project_organizer.add_projects(projects=new_projects)
 
-    project_organizer.update_json_files()
 
     mail_content_markdown = format_mail(project_organizer=project_organizer)
     mail_content_html = markdown(mail_content_markdown)
