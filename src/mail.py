@@ -2,7 +2,8 @@ import os
 import smtplib
 from dotenv import load_dotenv, find_dotenv
 from email.message import EmailMessage
-from projects import ProjectOrganizer, FilmProject, Person
+from custom_dataclasses import FilmProject, Person
+from notion_class import NotionUpdater
 
 load_dotenv(find_dotenv())
 
@@ -10,7 +11,13 @@ EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_SENDER_ADDRESS")
 EMAIL_SENDER_PASSWORD = os.environ.get("EMAIL_SENDER_PASSWORD")
 EMAIL_RECEIVER_ADDRESS = os.environ.get("EMAIL_RECEIVER_ADDRESS")
 
-def send_email(subject: str, content: str, to_address: str = EMAIL_RECEIVER_ADDRESS):
+def send_email(subject: str, content: str, to_address: str):
+
+    if None in [EMAIL_SENDER_ADDRESS, EMAIL_SENDER_PASSWORD, EMAIL_RECEIVER_ADDRESS]:
+        raise ValueError
+
+    if not to_address:
+        to_address = EMAIL_RECEIVER_ADDRESS
 
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -36,7 +43,7 @@ def format_one_upcoming_projects_list(person: Person, projects: "list[FilmProjec
     return f"{sub_header}\n{body}"
 
 
-def format_mail(project_organizer: ProjectOrganizer, director_flag=True, actor_flag=True):
+def format_mail(notion_updater: NotionUpdater, director_flag=True, actor_flag=True):
     if not director_flag and not actor_flag:
         return ""
 
@@ -46,9 +53,9 @@ def format_mail(project_organizer: ProjectOrganizer, director_flag=True, actor_f
         director_projects_header = "# List(s) of upcoming projects from the directors you have chosen"
         director_projects_body = ""
 
-        for director in project_organizer.directors:
+        for director in [p for p in notion_updater.person_list if p.is_director]:
             if len(director.projects) > 0:
-                film_projects = [project for project in project_organizer.film_projects if project.tmdb_id in director.projects]
+                film_projects = [project for project in notion_updater.upcoming_list if project.tmdb_id in director.projects]
                 director_projects_body += format_one_upcoming_projects_list(director, film_projects)
         
         if director_projects_body != "":
@@ -58,9 +65,9 @@ def format_mail(project_organizer: ProjectOrganizer, director_flag=True, actor_f
         actor_projects_header = "\n\n\n# List(s) of upcoming projects from the actors/actresses you have chosen"
         actor_projects_body = ""
 
-        for actor in project_organizer.actors:
+        for actor in [p for p in notion_updater.person_list if p.is_actor]:
             if len(actor.projects) > 0:
-                film_projects = [project for project in project_organizer.film_projects if project.tmdb_id in actor.projects]
+                film_projects = [project for project in notion_updater.upcoming_list if project.tmdb_id in actor.projects]
                 actor_projects_body += format_one_upcoming_projects_list(actor, film_projects)
         
         if actor_projects_body != "":

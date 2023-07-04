@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from dotenv import find_dotenv, load_dotenv
-from projects import FilmProject, Person
+from custom_dataclasses import FilmProject, Person
 from requests_session import RateLimitedSession
 
 load_dotenv(find_dotenv())
@@ -165,7 +165,7 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
                 # Convert genre ids to actual genres
                 genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
                 project = FilmProject(
-                    associated_person=person,
+                    associated_person_page_id=person.notion_page_id,
                     tmdb_id=film_id,
                     imdb_id=imdb_id,
                     tmdb_url=tmdb_url,
