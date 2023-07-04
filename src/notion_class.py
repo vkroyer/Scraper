@@ -56,6 +56,8 @@ class NotionUpdater():
         """List of objects of the `Person` dataclass, containing all directors and actors/actresses."""
         if self._person_list == []:
             self.update_person_list()
+        for person in self._person_list:
+            person.projects = [self.previous_projects[p_id] for p_id in person.project_page_ids]
         return self._person_list
     
     @property
@@ -119,8 +121,17 @@ class NotionUpdater():
         with open(filename, "w") as f:
             json.dump(data, f, indent=2)
 
+    def write_project_ids_to_json(self):
+        """Write the notion page id and tmdb id of found projects to a json file.
+        Used to populate the `Person.projects` list the next time the program is run.
+        """
+        self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
+
     def update_json_files(self):
-        """Dumps the json response for each notion database into a json file for easy viewing of response structure."""
+        """Dumps the json response for each notion database into a json file for easy viewing of response structure.
+        Also dumps the upcoming projects to json file,
+        used for populating the `Person.projects` list the next run."""
+
         filenames = [f"data/notion_{name}_json.json" for name in ["personlist", "upcoming", "released"]]
         urls = [GET_PERSON_DATABASE_URL, GET_UPCOMING_DATABASE_URL, GET_RELEASED_DATABASE_URL]
 
@@ -128,11 +139,8 @@ class NotionUpdater():
             data = self.read_database(url=url)
             self.write_json_to_file(data=data, filename=filename)
 
-    def write_project_ids_to_json(self):
-        """Write the notion page id and tmdb id of found projects to a json file.
-        Used to populate the `Person.projects` list the next time the program is run.
-        """
         self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
+
 
     def update_person_list(self):
         """Get all persons from Notion database with their associated attributes."""
@@ -162,7 +170,7 @@ class NotionUpdater():
             tmdb_id_regex = r".*\/person\/(\d+)-.*"
             tmdb_id = re.sub(tmdb_id_regex, r"\1", tmdb_url)
 
-            project_page_ids = [relation["id"] for relation in properties["📲 UpcomingProjects"]["relation"]]
+            project_page_ids = [relation["id"] for relation in properties["Upcoming projects"]["relation"]]
 
             person = Person(
                 notion_page_id=page_id,
@@ -188,6 +196,7 @@ class NotionUpdater():
         projects = []
         results = self.read_database(url=url)
         for result in results:
+            project_page_id = result["id"]
             properties = result["properties"]
             
             person_page_id = properties["Included people"]["relation"][0]["id"]
@@ -220,6 +229,8 @@ class NotionUpdater():
                 genres=genres
             )
             projects.append(film_project)
+
+            self._previous_projects[project_page_id] = tmdb_id
         
         return projects
 
@@ -357,6 +368,8 @@ if __name__ == "__main__":
 
     with RateLimitedSession(max_requests=3) as session:
         notion_updater = NotionUpdater(session=session)
+
+        notion_updater.update_json_files()
 
         people = notion_updater.person_list
         for person in people:
