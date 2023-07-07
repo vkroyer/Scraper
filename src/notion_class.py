@@ -121,12 +121,6 @@ class NotionUpdater():
         with open(filename, "w") as f:
             json.dump(data, f, indent=2)
 
-    def write_project_ids_to_json(self):
-        """Write the notion page id and tmdb id of found projects to a json file.
-        Used to populate the `Person.projects` list the next time the program is run.
-        """
-        self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
-
     def update_json_files(self):
         """Dumps the json response for each notion database into a json file for easy viewing of response structure.
         Also dumps the upcoming projects to json file,
@@ -162,10 +156,6 @@ class NotionUpdater():
             imdb_url = properties["IMDb URL"]["url"]
             tmdb_url = properties["TMDb URL"]["url"]
 
-            # Get the ID from the IMDb url
-            imdb_id_regex = r".*nm([0-9]+)$"
-            imdb_id = re.sub(imdb_id_regex, r"\1", imdb_url)
-
             # Get the ID from the TMDb url
             tmdb_id_regex = r".*\/person\/(\d+)-.*"
             tmdb_id = re.sub(tmdb_id_regex, r"\1", tmdb_url)
@@ -175,7 +165,6 @@ class NotionUpdater():
             person = Person(
                 notion_page_id=page_id,
                 tmdb_id=tmdb_id,
-                imdb_id=imdb_id,
                 tmdb_url=tmdb_url,
                 imdb_url=imdb_url,
                 name=name,
@@ -205,10 +194,6 @@ class NotionUpdater():
 
             imdb_url = properties["IMDb URL"]["url"]
             tmdb_url = properties["TMDb URL"]["url"]
-
-            # Get the ID from the IMDb URL
-            imdb_id_regex = r".*\/title\/tt([0-9]+)\/.*"
-            imdb_id = re.sub(imdb_id_regex, r"\1", imdb_url)
 
             # Get the ID from the TMDb url
             tmdb_id_regex = r".*\/movie\/(\d+)-.*"

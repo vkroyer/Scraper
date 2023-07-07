@@ -18,6 +18,7 @@ IMDB_MOVIE_URL = "https://imdb.com/title"
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
 
+TMDB_API_MOVIE_DETAILS_URL = "https://api.themoviedb.org/3/movie/"
 TMDB_API_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_API_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
 TMDB_API_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
@@ -122,10 +123,74 @@ def get_genres_by_id(requests_session: RateLimitedSession, genre_ids: "list[int]
     return current_genres
 
 
+
+def create_film_projects_from_response(requests_session: RateLimitedSession, json_data: dict, person: Person) -> "list[FilmProject]":
+    """Extract relevant details from the API response and create `FilmProject` objects."""
+    projects = []
+    
+    film_projects = json_data["results"]
+    for film_project in film_projects:
+
+        # Filter only projects that doesn't have a release date or that has a release date in the future
+        release_date = film_project.get("release_date")
+        if not release_date or datetime.strptime(release_date, "%Y-%m-%d").date() > DATE_TODAY:
+        
+            film_id = str(film_project["id"])
+            # Fetch detailed information for the movie
+            movie_credits_url = f"{TMDB_API_MOVIE_DETAILS_URL}/{film_id}/credits"
+            response = requests_session.get(movie_credits_url, params={"language": "en-US"}, headers=HEADERS)
+            movie_details = response.json()
+
+            cast = movie_details.get("cast", [])
+            crew = movie_details.get("crew", [])
+            
+            # Check if the person is in the cast or crew list
+            person_found = False
+            for cast_member in cast:
+                if cast_member["id"] == person.tmdb_id:
+                    person_found = True
+                    break
+            if not person_found:
+                for crew_member in crew:
+                    crew_member_id = str(crew_member["id"])
+                    crew_member_job = crew_member["job"]
+                    if crew_member_id == person.tmdb_id and crew_member_job == "Director":
+                        person_found = True
+                        break
+            if not person_found:
+                continue
+
+            title = film_project["title"]
+            synopsis = film_project["overview"]
+            genre_ids = film_project["genre_ids"]
+
+            imdb_id = get_external_id_project(requests_session=requests_session, project_id=film_id)
+            imdb_url = f"{IMDB_MOVIE_URL}/{imdb_id}" if imdb_id else ""
+            
+            # Build the url for the film project
+            normalized_title = normalize_string(title=title)
+            tmdb_url = f"{TMDB_MOVIE_URL}/{film_id}-{normalized_title}"
+
+            # Convert genre ids to actual genres
+            genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
+            project = FilmProject(
+                associated_person_page_id=person.notion_page_id,
+                tmdb_id=film_id,
+                tmdb_url=tmdb_url,
+                imdb_url=imdb_url,
+                title=title,
+                synopsis=synopsis,
+                genres=genres
+            )
+            projects.append(project)
+
+    return projects
+
+
 def find_upcoming_projects(requests_session: RateLimitedSession, person: Person) -> "list[FilmProject]":
     """Calls the API with the id of the person and returns upcoming projects with said person."""
 
-    projects = []
+    film_projects = []
 
     params = {
         "include_adult": False,
@@ -136,56 +201,47 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
 
     if person.is_actor:
         params["with_cast"] = person.tmdb_id
-    elif person.is_director:
+
+        response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
+
+        data = response.json()
+
+        if response.status_code == 200:
+            projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
+            film_projects.extend(projects)
+        else:
+            print(f"Error: {data['status_message']}")
+
+    if person.is_director:
         params["with_crew"] = person.tmdb_id
         params["crew_position"] = "Director"
 
-    response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
+        response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
 
-    data = response.json()
+        data = response.json()
 
-    if response.status_code == 200:
-        film_projects = data["results"]
-        for film_project in film_projects:
-            # Filter only projects that doesn't have a release date or that has a release date in the future
-            release_date = film_project.get("release_date")
-            if not release_date or datetime.strptime(release_date, "%Y-%m-%d").date() > DATE_TODAY:
-                title = film_project["title"]
-                film_id = str(film_project["id"])
-                synopsis = film_project["overview"]
-                genre_ids = film_project["genre_ids"]
+        if response.status_code == 200:
+            projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
+            film_projects.extend(projects)
+        else:
+            print(f"Error: {data['status_message']}")
 
-                imdb_id = get_external_id_project(requests_session=requests_session, project_id=film_id)
-                imdb_url = f"{IMDB_MOVIE_URL}/{imdb_id}" if imdb_id else ""
-                
-                # Build the url for the film project
-                normalized_title = normalize_string(title=title)
-                tmdb_url = f"{TMDB_MOVIE_URL}/{film_id}-{normalized_title}"
-
-                # Convert genre ids to actual genres
-                genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
-                project = FilmProject(
-                    associated_person_page_id=person.notion_page_id,
-                    tmdb_id=film_id,
-                    tmdb_url=tmdb_url,
-                    imdb_url=imdb_url,
-                    title=title,
-                    synopsis=synopsis,
-                    genres=genres
-                )
-                projects.append(project)
-    else:
-        print(f"Error: {data['status_message']}")
-
-    return projects
+    return film_projects
 
 
 if __name__ == "__main__":
     ...
-    # with RateLimitedSession() as session:
-    #     person_id = get_person_id(session, "James Cameron")
-    #     person = Person(person_id, "", "", "James Cameron", is_director=True, is_actor=False)
-    #     projects = find_upcoming_projects(session, person)
+    with RateLimitedSession() as session:
+        person = Person(
+            notion_page_id="68d179cb-1e2d-4170-9809-adb732fdd836",
+            tmdb_id="291263",
+            tmdb_url="https://www.themoviedb.org/person/291263-jordan-peele",
+            imdb_url="https://imdb.com/name/nm1443502",
+            name="Jordan Peele",
+            is_director=True,
+            is_actor=False
+        )
+        projects = find_upcoming_projects(session, person)
 
-    #     for project in projects:
-            # print(project.json)
+        for project in projects:
+            print(project.json)

@@ -14,9 +14,10 @@ def main():
             
             notion_updater = NotionUpdater(session=notion_session)
 
-            # TODO: Remove projects that have been released
+            # TODO: Move projects that have been released to the Released Projects database
             # Scrape new upcoming projects from all persons
             for person in notion_updater.person_list:
+                # TODO: Find out why actor projects are not found or added to the database
                 projects = find_upcoming_projects(requests_session=tmdb_session, person=person)
                 new_projects = []
                 for project in projects:
@@ -26,13 +27,15 @@ def main():
                     person.projects.append(project.tmdb_id)
 
                 notion_updater.add_upcoming_projects_to_database(projects=new_projects)
+    
+    notion_updater.update_json_files()
 
 
-    # mail_content_markdown = format_mail(project_organizer=project_organizer)
-    # mail_content_html = markdown(mail_content_markdown)
+    mail_content_markdown = format_mail(notion_updater=notion_updater)
+    mail_content_html = markdown(mail_content_markdown)
 
-    # subject = "Roundup of Upcoming Movies and TV Shows"
-    # send_email(subject=subject, content=mail_content_html)
+    subject = "Roundup of Upcoming Movies and TV Shows"
+    send_email(subject=subject, content=mail_content_html)
     
 
 if __name__ == "__main__":

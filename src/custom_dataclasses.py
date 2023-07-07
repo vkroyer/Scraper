@@ -5,7 +5,6 @@ from dataclasses import asdict, dataclass, field
 class Person:
     notion_page_id: str
     tmdb_id: str
-    imdb_id: str
     tmdb_url: str
     imdb_url: str
     name: str

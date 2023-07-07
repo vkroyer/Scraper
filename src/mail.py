@@ -11,7 +11,7 @@ EMAIL_SENDER_ADDRESS = os.environ.get("EMAIL_SENDER_ADDRESS")
 EMAIL_SENDER_PASSWORD = os.environ.get("EMAIL_SENDER_PASSWORD")
 EMAIL_RECEIVER_ADDRESS = os.environ.get("EMAIL_RECEIVER_ADDRESS")
 
-def send_email(subject: str, content: str, to_address: str):
+def send_email(subject: str, content: str, to_address: str = ""):
 
     if None in [EMAIL_SENDER_ADDRESS, EMAIL_SENDER_PASSWORD, EMAIL_RECEIVER_ADDRESS]:
         raise ValueError
