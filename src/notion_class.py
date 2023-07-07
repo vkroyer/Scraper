@@ -221,7 +221,6 @@ class NotionUpdater():
             film_project = FilmProject(
                 associated_person_page_id=person_page_id,
                 tmdb_id=tmdb_id,
-                imdb_id=imdb_id,
                 tmdb_url=tmdb_url,
                 imdb_url=imdb_url,
                 title=title,
@@ -295,6 +294,7 @@ class NotionUpdater():
 
     def add_upcoming_projects_to_database(self, projects: "list[FilmProject]"):
         """Add upcoming projects to the database with a relation link to the person database."""
+        responses = []
         for project in projects:
             data = {
                 "Title": {"title": [{"text": {"content": project.title}}]},
@@ -303,10 +303,12 @@ class NotionUpdater():
                     self.upcoming_multiselect_options[genre] for genre in project.genres
                 ]},
                 "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
-                "IMDb URL": {"url": project.imdb_url},
+                "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
                 "TMDb URL": {"url": project.tmdb_url}
             }
             response = self.create_page_in_upcoming_database(data=data)
+            responses.append(response)
+        return responses
 
     def create_page_in_upcoming_database(self, data: dict):
         """Creates an entry in the Notion database for an upcoming project.
@@ -338,7 +340,7 @@ class NotionUpdater():
                     self.released_multiselect_options[genre] for genre in project.genres
                 ]},
                 "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
-                "IMDb URL": {"url": project.imdb_url},
+                "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
                 "TMDb URL": {"url": project.tmdb_url}
             }
             response = self.create_page_in_released_database(data=data)

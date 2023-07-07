@@ -156,7 +156,7 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
                 genre_ids = film_project["genre_ids"]
 
                 imdb_id = get_external_id_project(requests_session=requests_session, project_id=film_id)
-                imdb_url = f"{IMDB_MOVIE_URL}/{imdb_id}"
+                imdb_url = f"{IMDB_MOVIE_URL}/{imdb_id}" if imdb_id else ""
                 
                 # Build the url for the film project
                 normalized_title = normalize_string(title=title)
@@ -167,7 +167,6 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
                 project = FilmProject(
                     associated_person_page_id=person.notion_page_id,
                     tmdb_id=film_id,
-                    imdb_id=imdb_id,
                     tmdb_url=tmdb_url,
                     imdb_url=imdb_url,
                     title=title,

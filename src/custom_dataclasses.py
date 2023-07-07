@@ -26,7 +26,6 @@ class Person:
 class FilmProject:
     associated_person_page_id: str
     tmdb_id: str
-    imdb_id: str
     tmdb_url: str
     imdb_url: str
     title: str
