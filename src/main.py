@@ -4,14 +4,12 @@ from notion_class import NotionUpdater
 from requests_session import RateLimitedSession
 from scrape import find_upcoming_projects
 
-MAX_REQUESTS_PER_SECOND = 30
+TMDB_MAX_REQUESTS_PER_SECOND = 30
 NOTION_MAX_REQUESTS_PER_SECOND = 3
-TMDB_PERSON_URL = "https://www.themoviedb.org/person"
-IMDB_PERSON_URL = "https://imdb.com/name"
 
 def main():
 
-    with RateLimitedSession(max_requests=MAX_REQUESTS_PER_SECOND) as tmdb_session:
+    with RateLimitedSession(max_requests=TMDB_MAX_REQUESTS_PER_SECOND) as tmdb_session:
         with RateLimitedSession(max_requests=NOTION_MAX_REQUESTS_PER_SECOND) as notion_session:
             
             notion_updater = NotionUpdater(session=notion_session)
