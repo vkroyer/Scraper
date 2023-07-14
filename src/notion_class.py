@@ -1,9 +1,11 @@
 import json
 import os
 import re
+
+from dotenv import find_dotenv, load_dotenv
+
 from custom_dataclasses import FilmProject, Person
 from requests_session import RateLimitedSession
-from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
@@ -175,7 +177,10 @@ class NotionUpdater():
             person.project_page_ids = project_page_ids
 
             if self.previous_projects:
-                person.projects = [self.previous_projects[page_id] for page_id in person.project_page_ids]
+                try:
+                    person.projects = [self.previous_projects[page_id] for page_id in person.project_page_ids]
+                except KeyError:
+                    print(f"KeyError: {page_id} not found in previous projects")
 
             self._person_list.append(person)
             self._name_list.append(name)
@@ -348,6 +353,11 @@ class NotionUpdater():
         payload = {"parent": {"database_id": RELEASED_PROJECTS_DATABASE_ID}, "properties": data}
         response = self._session.post(url, headers=HEADERS, json=payload)
         return response
+    
+
+    def close(self):
+        """Save the relation between page ids and tmdb ids to a json file for future use."""
+        self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
     
 
 
