@@ -18,7 +18,7 @@ IMDB_MOVIE_URL = "https://imdb.com/title"
 TMDB_MOVIE_URL = "https://www.themoviedb.org/movie"
 TMDB_PERSON_URL = "https://www.themoviedb.org/person"
 
-TMDB_API_MOVIE_DETAILS_URL = "https://api.themoviedb.org/3/movie/"
+TMDB_API_MOVIE_DETAILS_URL = "https://api.themoviedb.org/3/movie"
 TMDB_API_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 TMDB_API_PERSON_URL = "https://api.themoviedb.org/3/search/person?query="
 TMDB_API_GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list?language=en"
@@ -147,7 +147,7 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
             # Check if the person is in the cast or crew list
             person_found = False
             for cast_member in cast:
-                if cast_member["id"] == person.tmdb_id:
+                if str(cast_member["id"]) == person.tmdb_id:
                     person_found = True
                     break
             if not person_found:
