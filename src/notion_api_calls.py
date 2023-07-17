@@ -6,6 +6,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from custom_dataclasses import FilmProject, Person
 from requests_session import RateLimitedSession
+from tmdb_api_calls import get_person_id, get_external_id_person
 
 load_dotenv(find_dotenv())
 
@@ -31,6 +32,11 @@ HEADERS = {
 # FILENAMES
 NOTION_MULTISELECT_GENRES_FILENAME = "notion_multiselect_genres/genre_tags.json"
 PREVIOUS_PROJECTS_FILENAME = "data/previous_projects.json"
+
+
+# URLs
+IMDB_PERSON_URL = "https://imdb.com/name"
+TMDB_PERSON_URL = "https://www.themoviedb.org/person"
 
 
 class NotionUpdater():
@@ -142,8 +148,24 @@ class NotionUpdater():
                 elif tag["name"] == "Actor":
                     is_actor = True
 
-            imdb_url = properties["IMDb URL"]["url"]
-            tmdb_url = properties["TMDb URL"]["url"]
+            if not properties["IMDb URL"]["url"] or not properties["TMDb URL"]["url"]:
+                # Find the IMDb and TMDb urls from the name
+                tmdb_id = get_person_id(requests_session=self._session, name=name)
+                tmdb_url = f"{TMDB_PERSON_URL}/{tmdb_id}"
+                imdb_id = get_external_id_person(requests_session=self._session, person_id=tmdb_id)
+                imdb_url = f"{IMDB_PERSON_URL}/{imdb_id}"
+
+                # Add the urls to the person's page in the database
+                url_payload = {
+                    "properties": {
+                        "IMDb URL": {"url": imdb_url},
+                        "TMDb URL": {"url": tmdb_url}
+                    }
+                }
+                response = self._session.patch(f"{CREATE_PAGE_URL}/{page_id}", headers=HEADERS, json=url_payload)
+            else:
+                imdb_url = properties["IMDb URL"]["url"]
+                tmdb_url = properties["TMDb URL"]["url"]
 
             # Get the ID from the TMDb url
             tmdb_id_regex = r".*\/person\/(\d+)-.*"
@@ -197,7 +219,10 @@ class NotionUpdater():
 
             popularity = properties["Popularity"]["number"]
 
-            release_date = properties["Release date"]["date"]["start"] if properties["Release date"] else None
+            if properties["Release date"]["date"]:
+                release_date = properties["Release date"]["date"]["start"]
+            else:
+                release_date = None
 
             film_project = FilmProject(
                 tmdb_id=tmdb_id,
@@ -374,7 +399,7 @@ if __name__ == "__main__":
     with RateLimitedSession(max_requests=3) as session:
         notion_updater = NotionUpdater(session=session)
         notion_updater.update_json_files()
-        # notion_updater.close()
+        notion_updater.close()
 
 
         
