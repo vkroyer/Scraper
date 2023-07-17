@@ -144,7 +144,7 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
             cast = movie_details.get("cast", [])
             crew = movie_details.get("crew", [])
             
-            # Check if the person is in the cast or crew list
+            # Check if the person is in the cast or is the director
             person_found = False
             for cast_member in cast:
                 if str(cast_member["id"]) == person.tmdb_id:
@@ -163,6 +163,7 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
             title = film_project["title"]
             synopsis = film_project["overview"]
             genre_ids = film_project["genre_ids"]
+            popularity = film_project["popularity"]
 
             imdb_id = get_external_id_project(requests_session=requests_session, project_id=film_id)
             imdb_url = f"{IMDB_MOVIE_URL}/{imdb_id}" if imdb_id else ""
@@ -180,6 +181,7 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
                 title=title,
                 synopsis=synopsis,
                 genres=genres,
+                popularity=popularity,
                 associated_person_page_ids=[person.notion_page_id],
             )
             projects.append(project)

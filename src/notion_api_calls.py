@@ -208,6 +208,8 @@ class NotionUpdater():
 
             synopsis = properties["Synopsis"]["rich_text"][0]["text"]["content"]
 
+            popularity = properties["Popularity"]["number"]
+
             film_project = FilmProject(
                 tmdb_id=tmdb_id,
                 tmdb_url=tmdb_url,
@@ -215,6 +217,7 @@ class NotionUpdater():
                 title=title,
                 synopsis=synopsis,
                 genres=genres,
+                popularity=popularity,
                 associated_person_page_ids=[person_page_ids],
             )
             projects.append(film_project)
@@ -233,6 +236,7 @@ class NotionUpdater():
 
 
     def add_persons_to_database(self, persons: "list[Person]"):
+        responses = []
         for person in persons:
             # Don't add person that's already in the Notion database
             if person.name in self._name_list:
@@ -258,6 +262,9 @@ class NotionUpdater():
             }
 
             response = self.create_page_in_person_database(data=data)
+            responses.append(response)
+        
+        return responses
         
 
     def create_page_in_person_database(self, data: dict):
@@ -294,7 +301,8 @@ class NotionUpdater():
                 ]},
                 "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
                 "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
-                "TMDb URL": {"url": project.tmdb_url}
+                "TMDb URL": {"url": project.tmdb_url},
+                "Popularity": {"number": project.popularity}
             }
             response = self.create_page_in_upcoming_database(data=data)
             responses.append(response)
@@ -310,7 +318,8 @@ class NotionUpdater():
                 "Genres": {"multi_select": <tags>},
                 "Synopsis": {"rich_text": [{"plain_text": <insert synopsis>}]},
                 "IMDb URL": {"url": <insert url>},
-                "TMDb URL": {"url": <insert url>}
+                "TMDb URL": {"url": <insert url>},
+                "Popularity": {"number": <insert popularity>}
             }
             where tags is a list of genre multi_select options in json form.
         """
@@ -322,6 +331,7 @@ class NotionUpdater():
 
     def add_released_projects_to_database(self, projects: "list[FilmProject]"):
         """Add released projects to the database with a relation link to the person database."""
+        responses = []
         for project in projects:
             data = {
                 "Title": {"title": [{"text": {"content": project.title}}]},
@@ -331,9 +341,12 @@ class NotionUpdater():
                 ]},
                 "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
                 "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
-                "TMDb URL": {"url": project.tmdb_url}
+                "TMDb URL": {"url": project.tmdb_url},
+                "Popularity": {"number": project.popularity}
             }
             response = self.create_page_in_released_database(data=data)
+            responses.append(response)
+        return responses
 
     def create_page_in_released_database(self, data: dict):
         """Creates an entry in the Notion database for an released project.
@@ -345,7 +358,8 @@ class NotionUpdater():
                 "Genres": {"multi_select": <tags>},
                 "Synopsis": {"rich_text": [{"text": {"content": <insert synopsis>}}]},
                 "IMDb URL": {"url": <insert url>},
-                "TMDb URL": {"url": <insert url>}
+                "TMDb URL": {"url": <insert url>},
+                "Popularity": {"number": <insert popularity>}
             }
             where tags is a list of genre multi_select options in json form.
         """

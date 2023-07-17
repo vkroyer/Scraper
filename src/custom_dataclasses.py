@@ -29,11 +29,10 @@ class FilmProject:
     title: str
     synopsis: str
     genres: "list[str]" = field(default_factory=list)
+    popularity: float = 0.0
     associated_person_page_ids: "list[str]" = field(default_factory=list)
 
     # release_date: str = field(init=False)
-    # director: str
-    # stars: "list[str]" = field(default_factory=list)
 
     @property
     def __dict__(self):
