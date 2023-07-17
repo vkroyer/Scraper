@@ -1,8 +1,8 @@
 from mail import format_mail, send_email
 from markdown import markdown
-from notion_class import NotionUpdater
+from notion_api_calls import NotionUpdater
 from requests_session import RateLimitedSession
-from scrape import find_upcoming_projects
+from tmdb_api_calls import find_upcoming_projects
 
 TMDB_MAX_REQUESTS_PER_SECOND = 30
 NOTION_MAX_REQUESTS_PER_SECOND = 3
@@ -39,6 +39,8 @@ def main():
 
                     new_projects.append(project)
                     person.projects.append(project.tmdb_id)
+                
+                print(f"Found {len(projects)} upcoming projects for {person.name}")
 
             notion_updater.add_upcoming_projects_to_database(projects=new_projects)
     

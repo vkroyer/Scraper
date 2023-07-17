@@ -3,7 +3,7 @@ import smtplib
 from dotenv import load_dotenv, find_dotenv
 from email.message import EmailMessage
 from custom_dataclasses import FilmProject, Person
-from notion_class import NotionUpdater
+from notion_api_calls import NotionUpdater
 
 load_dotenv(find_dotenv())
 
