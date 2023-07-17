@@ -23,13 +23,13 @@ class Person:
 
 @dataclass
 class FilmProject:
-    associated_person_page_id: str
     tmdb_id: str
     tmdb_url: str
     imdb_url: str
     title: str
     synopsis: str
     genres: "list[str]" = field(default_factory=list)
+    associated_person_page_ids: "list[str]" = field(default_factory=list)
 
     # release_date: str = field(init=False)
     # director: str

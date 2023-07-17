@@ -174,13 +174,13 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
             # Convert genre ids to actual genres
             genres = get_genres_by_id(requests_session=requests_session, genre_ids=genre_ids)
             project = FilmProject(
-                associated_person_page_id=person.notion_page_id,
                 tmdb_id=film_id,
                 tmdb_url=tmdb_url,
                 imdb_url=imdb_url,
                 title=title,
                 synopsis=synopsis,
-                genres=genres
+                genres=genres,
+                associated_person_page_ids=[person.notion_page_id],
             )
             projects.append(project)
 

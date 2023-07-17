@@ -209,13 +209,13 @@ class NotionUpdater():
             synopsis = properties["Synopsis"]["rich_text"][0]["text"]["content"]
 
             film_project = FilmProject(
-                associated_person_page_id=person_page_id,
                 tmdb_id=tmdb_id,
                 tmdb_url=tmdb_url,
                 imdb_url=imdb_url,
                 title=title,
                 synopsis=synopsis,
-                genres=genres
+                genres=genres,
+                associated_person_page_ids=[person_page_id],
             )
             projects.append(film_project)
 
@@ -288,7 +288,7 @@ class NotionUpdater():
         for project in projects:
             data = {
                 "Title": {"title": [{"text": {"content": project.title}}]},
-                "Included people": {"relation": [{"id": project.associated_person_page_id}]},
+                "Included people": {"relation": [{"id": p_id} for p_id in project.associated_person_page_ids]},
                 "Genres": {"multi_select": [
                     self.upcoming_multiselect_options[genre] for genre in project.genres
                 ]},
@@ -325,7 +325,7 @@ class NotionUpdater():
         for project in projects:
             data = {
                 "Title": {"title": [{"text": {"content": project.title}}]},
-                "Included people": {"relation": [{"id": project.associated_person_page_id}]},
+                "Included people": {"relation": [{"id": p_id} for p_id in project.associated_person_page_ids]},
                 "Genres": {"multi_select": [
                     self.released_multiselect_options[genre] for genre in project.genres
                 ]},
@@ -357,6 +357,11 @@ class NotionUpdater():
 
     def close(self):
         """Save the relation between page ids and tmdb ids to a json file for future use."""
+
+        # TODO: Check if this step can be done while writing to database instead of reading from it afterwards
+        # Update the list of upcoming projects before writing to file
+        self.update_upcoming_list()
+
         self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
     
 
@@ -365,12 +370,13 @@ if __name__ == "__main__":
 
     with RateLimitedSession(max_requests=3) as session:
         notion_updater = NotionUpdater(session=session)
+        notion_updater.close()
 
-        notion_updater.update_json_files()
+        # notion_updater.update_json_files()
 
-        people = notion_updater.person_list
-        for person in people:
-            print(f"{person.name}: {person.projects}")
+        # people = notion_updater.person_list
+        # for person in people:
+        #     print(f"{person.name}: {person.projects}")
 
 
         # print(notion_updater.upcoming_list[0].json)
