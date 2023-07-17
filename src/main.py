@@ -1,5 +1,3 @@
-from mail import format_mail, send_email
-from markdown import markdown
 from notion_api_calls import NotionUpdater
 from requests_session import RateLimitedSession
 from tmdb_api_calls import find_upcoming_projects, get_released_projects_from_previous
@@ -51,13 +49,6 @@ def main():
                 print(f"Found {len(projects)} upcoming projects for {person.name}")
 
             notion_updater.add_film_projects_to_database(projects=new_projects, database="upcoming")
-
-
-    # mail_content_markdown = format_mail(notion_updater=notion_updater)
-    # mail_content_html = markdown(mail_content_markdown)
-
-    # subject = "Roundup of Upcoming Movies and TV Shows"
-    # send_email(subject=subject, content=mail_content_html)
 
     notion_updater.close()
     
