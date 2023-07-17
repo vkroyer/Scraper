@@ -29,8 +29,7 @@ HEADERS = {
 }
 
 # FILENAMES
-NOTION_UPCOMING_MULTISELECT_FILENAME = "notion_multiselect_genres/upcoming_genre_tags.json"
-NOTION_RELEASED_MULTISELECT_FILENAME = "notion_multiselect_genres/released_genre_tags.json"
+NOTION_MULTISELECT_GENRES_FILENAME = "notion_multiselect_genres/genre_tags.json"
 PREVIOUS_PROJECTS_FILENAME = "data/previous_projects.json"
 
 
@@ -88,20 +87,12 @@ class NotionUpdater():
         return self._previous_projects
     
     @property
-    def upcoming_multiselect_options(self):
-        """Dictionary containing all the json info about each genre tag in the upcoming projects database in Notion."""
+    def multiselect_genre_options(self):
+        """Dictionary containing all the json info about each genre tag in the databases in Notion."""
         if self._upcoming_multiselect_options == {}:
-            with open(NOTION_UPCOMING_MULTISELECT_FILENAME, "r") as f:
+            with open(NOTION_MULTISELECT_GENRES_FILENAME, "r") as f:
                 self._upcoming_multiselect_options = json.load(f)
         return self._upcoming_multiselect_options
-    
-    @property
-    def released_multiselect_options(self):
-        """Dictionary containing all the json info about each genre tag in the released projects database in Notion."""
-        if self._released_multiselect_options == {}:
-            with open(NOTION_RELEASED_MULTISELECT_FILENAME, "r") as f:
-                self._released_multiselect_options = json.load(f)
-        return self._released_multiselect_options
 
     def read_database(self, url: str = GET_PERSON_DATABASE_URL):
         """Return all pages in a Notion database located at `url`."""
@@ -124,9 +115,7 @@ class NotionUpdater():
             json.dump(data, f, indent=2)
 
     def update_json_files(self):
-        """Dumps the json response for each notion database into a json file for easy viewing of response structure.
-        Also dumps the upcoming projects to json file,
-        used for populating the `Person.projects` list the next run."""
+        """Dumps the json response for each notion database into a json file for easy viewing of response structure."""
 
         filenames = [f"data/notion_{name}_json.json" for name in ["personlist", "upcoming", "released"]]
         urls = [GET_PERSON_DATABASE_URL, GET_UPCOMING_DATABASE_URL, GET_RELEASED_DATABASE_URL]
@@ -134,8 +123,6 @@ class NotionUpdater():
         for filename, url in zip(filenames, urls):
             data = self.read_database(url=url)
             self.write_json_to_file(data=data, filename=filename)
-
-        self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
 
 
     def update_person_list(self):
@@ -210,6 +197,8 @@ class NotionUpdater():
 
             popularity = properties["Popularity"]["number"]
 
+            release_date = properties["Release date"]["date"]["start"] if properties["Release date"] else None
+
             film_project = FilmProject(
                 tmdb_id=tmdb_id,
                 tmdb_url=tmdb_url,
@@ -220,9 +209,16 @@ class NotionUpdater():
                 popularity=popularity,
                 associated_person_page_ids=[person_page_ids],
             )
+
+            film_project.notion_page_id = project_page_id
+            
+            if release_date:
+                film_project.release_date = release_date
+
             projects.append(film_project)
 
-            self._previous_projects[project_page_id] = tmdb_id
+            if url == GET_UPCOMING_DATABASE_URL:
+                self._previous_projects[project_page_id] = tmdb_id
         
         return projects
 
@@ -289,67 +285,41 @@ class NotionUpdater():
         return response
     
 
-    def add_upcoming_projects_to_database(self, projects: "list[FilmProject]"):
-        """Add upcoming projects to the database with a relation link to the person database."""
-        responses = []
-        for project in projects:
-            data = {
-                "Title": {"title": [{"text": {"content": project.title}}]},
-                "Included people": {"relation": [{"id": p_id} for p_id in project.associated_person_page_ids]},
-                "Genres": {"multi_select": [
-                    self.upcoming_multiselect_options[genre] for genre in project.genres
-                ]},
-                "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
-                "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
-                "TMDb URL": {"url": project.tmdb_url},
-                "Popularity": {"number": project.popularity}
-            }
-            response = self.create_page_in_upcoming_database(data=data)
-            responses.append(response)
-        return responses
-
-    def create_page_in_upcoming_database(self, data: dict):
-        """Creates an entry in the Notion database for an upcoming project.
+    def add_film_projects_to_database(self, projects: "list[FilmProject]", database: str):
+        """Add film projects to the database with a relation link to the person database.
         
-        data must follow the format:
-            data = {
-                "Title": {"title": [{"text": {"content": <insert title>}}]},
-                "Included people": {"relation": [{"id": <insert person page id>}]},
-                "Genres": {"multi_select": <tags>},
-                "Synopsis": {"rich_text": [{"plain_text": <insert synopsis>}]},
-                "IMDb URL": {"url": <insert url>},
-                "TMDb URL": {"url": <insert url>},
-                "Popularity": {"number": <insert popularity>}
-            }
-            where tags is a list of genre multi_select options in json form.
+        Param `database` must be either "upcoming" or "released".
         """
-        url = CREATE_PAGE_URL
-        payload = {"parent": {"database_id": UPCOMING_PROJECTS_DATABASE_ID}, "properties": data}
-        response = self._session.post(url, headers=HEADERS, json=payload)
-        return response
 
-
-    def add_released_projects_to_database(self, projects: "list[FilmProject]"):
-        """Add released projects to the database with a relation link to the person database."""
+        if database == "upcoming":
+            database_id = UPCOMING_PROJECTS_DATABASE_ID
+        elif database == "released":
+            database_id = RELEASED_PROJECTS_DATABASE_ID
+        else:
+            raise ValueError("Param `database` must be either 'upcoming' or 'released'.")
+        
         responses = []
         for project in projects:
+            release_date = {"start": project.release_date} if hasattr(project, "release_date") else None
             data = {
                 "Title": {"title": [{"text": {"content": project.title}}]},
                 "Included people": {"relation": [{"id": p_id} for p_id in project.associated_person_page_ids]},
                 "Genres": {"multi_select": [
-                    self.released_multiselect_options[genre] for genre in project.genres
+                    self.multiselect_genre_options[genre] for genre in project.genres
                 ]},
                 "Synopsis": {"rich_text": [{"text": {"content": project.synopsis}}]},
                 "IMDb URL": {"url": project.imdb_url if project.imdb_url else None},
                 "TMDb URL": {"url": project.tmdb_url},
-                "Popularity": {"number": project.popularity}
+                "Popularity": {"number": project.popularity},
+                "Release date": {"date": release_date}
             }
-            response = self.create_page_in_released_database(data=data)
+            response = self.create_page_in_database(data=data, database_id=database_id)
             responses.append(response)
-        return responses
 
-    def create_page_in_released_database(self, data: dict):
-        """Creates an entry in the Notion database for an released project.
+        return responses
+    
+    def create_page_in_database(self, data: dict, database_id: str):
+        """Creates an entry in the Notion database for a project.
         
         data must follow the format:
             data = {
@@ -359,13 +329,32 @@ class NotionUpdater():
                 "Synopsis": {"rich_text": [{"text": {"content": <insert synopsis>}}]},
                 "IMDb URL": {"url": <insert url>},
                 "TMDb URL": {"url": <insert url>},
-                "Popularity": {"number": <insert popularity>}
+                "Popularity": {"number": <insert popularity>},
+                "Release date": {"date": {"start": <insert date>}}
             }
             where tags is a list of genre multi_select options in json form.
         """
         url = CREATE_PAGE_URL
-        payload = {"parent": {"database_id": RELEASED_PROJECTS_DATABASE_ID}, "properties": data}
+        payload = {"parent": {"database_id": database_id}, "properties": data}
         response = self._session.post(url, headers=HEADERS, json=payload)
+        return response
+    
+
+    def remove_film_projects_from_database(self, projects: "list[FilmProject]"):
+        """Remove film projects from the database."""
+        
+        responses = []
+        for project in projects:
+            response = self.delete_page(page_id=project.notion_page_id)
+            responses.append(response)
+        
+        return responses
+    
+
+    def delete_page(self, page_id: str):
+        """Deletes a page from the Notion database."""
+        url = f"{CREATE_PAGE_URL}/{page_id}"
+        response = self._session.patch(url, headers=HEADERS, json={"archived": True})
         return response
     
 
@@ -384,17 +373,10 @@ if __name__ == "__main__":
 
     with RateLimitedSession(max_requests=3) as session:
         notion_updater = NotionUpdater(session=session)
-        notion_updater.close()
-
-        # notion_updater.update_json_files()
-
-        # people = notion_updater.person_list
-        # for person in people:
-        #     print(f"{person.name}: {person.projects}")
+        notion_updater.update_json_files()
+        # notion_updater.close()
 
 
-        # print(notion_updater.upcoming_list[0].json)
-        
         
         # film_project = FilmProject(
         #     associated_person=notion_updater.person_list[0],
@@ -406,5 +388,3 @@ if __name__ == "__main__":
         #     synopsis="Some cool shit happens in this movie, wow!",
         #     genres=["Action", "Adventure", "Science Fiction"]
         # )
-
-        # notion_updater.add_upcoming_projects_to_database([film_project])

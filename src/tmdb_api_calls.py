@@ -136,6 +136,7 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
         if not release_date or datetime.strptime(release_date, "%Y-%m-%d").date() > DATE_TODAY:
         
             film_id = str(film_project["id"])
+
             # Fetch detailed information for the movie
             movie_credits_url = f"{TMDB_API_MOVIE_DETAILS_URL}/{film_id}/credits"
             response = requests_session.get(movie_credits_url, params={"language": "en-US"}, headers=HEADERS)
@@ -184,6 +185,10 @@ def create_film_projects_from_response(requests_session: RateLimitedSession, jso
                 popularity=popularity,
                 associated_person_page_ids=[person.notion_page_id],
             )
+
+            if release_date:
+                project.release_date = release_date
+
             projects.append(project)
 
     return projects
@@ -229,6 +234,25 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
             print(f"Error: {data['status_message']}")
 
     return film_projects
+
+
+def get_released_projects_from_previous(requests_session: RateLimitedSession, previous_projects: "list[FilmProject]") -> "list[FilmProject]":
+    """Check if any of the previous upcoming projects have been released and return the released projects."""
+
+    released_projects: "list[FilmProject]" = []
+
+    for project in previous_projects:
+        movie_url = f"{TMDB_API_MOVIE_DETAILS_URL}/{project.tmdb_id}"
+        response = requests_session.get(movie_url, params={"language": "en-US"}, headers=HEADERS)
+        movie_details = response.json()
+
+        if response.status_code == 200:
+            release_date = movie_details.get("release_date")
+            status = movie_details.get("status")
+            if release_date and status == "Released":
+                released_projects.append(project)
+
+    return released_projects
 
 
 if __name__ == "__main__":
