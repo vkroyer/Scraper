@@ -36,6 +36,10 @@ class FilmProject:
 
     @property
     def __dict__(self):
+        if not hasattr(self, "release_date"):
+            self.release_date = ""
+        if not hasattr(self, "notion_page_id"):
+            self.notion_page_id = ""
         return asdict(self)
     
     @property
