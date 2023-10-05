@@ -249,7 +249,7 @@ def get_released_projects_from_previous(requests_session: RateLimitedSession, pr
         if response.status_code == 200:
             release_date = movie_details.get("release_date")
             status = movie_details.get("status")
-            if release_date and status == "Released":
+            if release_date and datetime.strptime(release_date, "%Y-%m-%d").date() < DATE_TODAY and status == "Released":
                 released_projects.append(project)
 
     return released_projects
