@@ -204,34 +204,63 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
         "include_video": False,
         "language": "en-US",
         "sort_by": "primary_release_date.desc",
+        "page": 1
     }
+
+    total_pages = 2
 
     if person.is_actor:
         params["with_cast"] = person.tmdb_id
 
-        response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
+        while params["page"] <= total_pages:
 
-        data = response.json()
+            response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
 
-        if response.status_code == 200:
-            projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
-            film_projects.extend(projects)
-        else:
-            print(f"Error: {data['status_message']}")
+            data = response.json()
+
+            # ######### TEST SHIT ##########
+            # with open(f"tests/{person.name}.json", "w") as f:
+            #     json.dump(person.__dict__, f, indent=2)
+            #     json.dump(data, f, indent=2)
+            # ######### TEST SHIT ##########
+
+            if response.status_code == 200:
+                projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
+                film_projects.extend(projects)
+
+                params["page"] += 1
+                total_pages = data["total_pages"]
+            else:
+                print(f"Error: {data['status_message']}")
+
+    params["page"] = 1
+    total_pages = 2
 
     if person.is_director:
         params["with_crew"] = person.tmdb_id
         params["crew_position"] = "Director"
 
-        response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
+        while params["page"] <= total_pages:
+            response = requests_session.get(TMDB_API_MOVIES_URL, params=params, headers=HEADERS)
 
-        data = response.json()
+            data = response.json()
 
-        if response.status_code == 200:
-            projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
-            film_projects.extend(projects)
-        else:
-            print(f"Error: {data['status_message']}")
+
+            # ######### TEST SHIT ##########
+            # with open(f"tests/{person.name}.json", "w") as f:
+            #     json.dump(person.__dict__, f, indent=2)
+            #     json.dump(data, f, indent=2)
+            # ######### TEST SHIT ##########
+
+            if response.status_code == 200:
+
+                projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
+                film_projects.extend(projects)
+
+                params["page"] += 1
+                total_pages = data["total_pages"]
+            else:
+                print(f"Error: {data['status_message']}")
 
     return film_projects
 
