@@ -352,6 +352,9 @@ class NotionUpdater():
             response = self.create_page_in_database(data=data, database_id=database_id)
             responses.append(response)
 
+            if response.status_code != 200:
+                CustomLogger.warning(f"Something went wrong when adding {project.title} to the database. Response status code: {response.status_code}.")
+
         return responses
     
     def create_page_in_database(self, data: dict, database_id: str):
@@ -383,6 +386,10 @@ class NotionUpdater():
         for project in projects:
             response = self.delete_page(page_id=project.notion_page_id)
             responses.append(response)
+
+            if response.status_code != 200:
+                CustomLogger.warning(f"Something went wrong when deleting {project.title} from the database. Response status code: {response.status_code}.")
+                
         
         return responses
     
