@@ -21,6 +21,7 @@ def main():
                 print(f"Moved {len(released_projects)} projects to the ReleasedProjects database")
 
 
+            previous_project_tmdb_ids = [project.tmdb_id for project in previous_projects]
             new_projects = []
 
             # Scrape new upcoming projects from all persons
@@ -30,7 +31,7 @@ def main():
                 
                 for project in projects:
                     # Check if project is already in the database
-                    if project.tmdb_id in person.projects:
+                    if project.tmdb_id in previous_project_tmdb_ids:
                         continue
 
                     # Check if the project is already in another person's list

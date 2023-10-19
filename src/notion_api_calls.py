@@ -202,7 +202,7 @@ class NotionUpdater():
             project_page_id = result["id"]
             properties = result["properties"]
             
-            person_page_ids = properties["Included people"]["relation"][0]["id"]
+            person_page_ids = [relation["id"] for relation in properties["Included people"]["relation"]]
 
             title = properties["Title"]["title"][0]["text"]["content"]
 
@@ -232,7 +232,7 @@ class NotionUpdater():
                 synopsis=synopsis,
                 genres=genres,
                 popularity=popularity,
-                associated_person_page_ids=[person_page_ids],
+                associated_person_page_ids=person_page_ids,
             )
 
             film_project.notion_page_id = project_page_id
