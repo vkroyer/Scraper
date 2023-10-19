@@ -403,6 +403,10 @@ class NotionUpdater():
 
     def close(self):
         """Save the relation between page ids and tmdb ids to a json file for future use."""
+        
+        # Update previous projects with new upcoming projects that have been found
+        self._previous_projects = {project.notion_page_id: project.tmdb_id for project in self._upcoming_list}
+
         self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
     
 
