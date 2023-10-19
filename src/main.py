@@ -26,7 +26,7 @@ def main():
                 notion_updater.remove_film_projects_from_database(projects=released_projects)
 
                 CustomLogger.info(f"Moved {len(released_projects)} projects to the ReleasedProjects database")
-                CustomLogger.info(f"Projects that have been moved from `Upcoming` to `Released`: {released_projects}")
+                CustomLogger.info(f"Projects that have been moved from `UpcomingProjects` to `ReleasedProjects`: {released_projects}")
 
 
             new_projects = []
