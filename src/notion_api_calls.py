@@ -5,6 +5,7 @@ import re
 from dotenv import find_dotenv, load_dotenv
 
 from custom_dataclasses import FilmProject, Person
+from custom_logger import CustomLogger
 from requests_session import RateLimitedSession
 from tmdb_api_calls import get_person_id, get_external_id_person
 
@@ -113,6 +114,8 @@ class NotionUpdater():
             response = self._session.post(url, json=payload, headers=HEADERS)
             data = response.json()
             results.extend(data["results"])
+
+        CustomLogger.debug(f"Finished reading database at {url=}")
         
         return results
 
@@ -149,6 +152,9 @@ class NotionUpdater():
                     is_actor = True
 
             if not properties["IMDb URL"]["url"] or not properties["TMDb URL"]["url"]:
+
+                CustomLogger.debug(f"Either IMDb url, TMDb url, or both urls are missing for {name}")
+
                 # Find the IMDb and TMDb urls from the name
                 tmdb_id = get_person_id(requests_session=self._session, name=name)
                 tmdb_url = f"{TMDB_PERSON_URL}/{tmdb_id}"
@@ -163,6 +169,9 @@ class NotionUpdater():
                     }
                 }
                 response = self._session.patch(f"{CREATE_PAGE_URL}/{page_id}", headers=HEADERS, json=url_payload)
+
+                CustomLogger.debug(f"Updated the page for {name} with their urls. Patch request response status code: {response.status_code}")
+
             else:
                 imdb_url = properties["IMDb URL"]["url"]
                 tmdb_url = properties["TMDb URL"]["url"]
@@ -189,7 +198,7 @@ class NotionUpdater():
                 try:
                     person.projects = [self.previous_projects[page_id] for page_id in person.project_page_ids]
                 except KeyError:
-                    print(f"KeyError: {page_id} not found in previous projects")
+                    CustomLogger.warning(f"KeyError: {page_id} not found in previous projects")
 
             self._person_list.append(person)
             self._name_list.append(name)
@@ -321,7 +330,9 @@ class NotionUpdater():
         elif database == "released":
             database_id = RELEASED_PROJECTS_DATABASE_ID
         else:
-            raise ValueError("Param `database` must be either 'upcoming' or 'released'.")
+            error = "Param `database` must be either 'upcoming' or 'released'."
+            CustomLogger.error(error)
+            raise ValueError(error)
         
         responses = []
         for project in projects:
@@ -385,31 +396,9 @@ class NotionUpdater():
 
     def close(self):
         """Save the relation between page ids and tmdb ids to a json file for future use."""
-
-        # TODO: Check if this step can be done while writing to database instead of reading from it afterwards
-        # Update the list of upcoming projects before writing to file
-        self.update_upcoming_list()
-
         self.write_json_to_file(data=self._previous_projects, filename=PREVIOUS_PROJECTS_FILENAME)
     
 
 
 if __name__ == "__main__":
-
-    with RateLimitedSession(max_requests=3) as session:
-        notion_updater = NotionUpdater(session=session)
-        notion_updater.update_json_files()
-        notion_updater.close()
-
-
-        
-        # film_project = FilmProject(
-        #     associated_person=notion_updater.person_list[0],
-        #     tmdb_id="",
-        #     imdb_id="",
-        #     tmdb_url="https://google.com",
-        #     imdb_url="https://google.com",
-        #     title="Cool Movie Title",
-        #     synopsis="Some cool shit happens in this movie, wow!",
-        #     genres=["Action", "Adventure", "Science Fiction"]
-        # )
+    ...

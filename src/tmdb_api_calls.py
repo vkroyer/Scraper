@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from dotenv import find_dotenv, load_dotenv
 from custom_dataclasses import FilmProject, Person
+from custom_logger import CustomLogger
 from requests_session import RateLimitedSession
 
 load_dotenv(find_dotenv())
@@ -74,7 +75,7 @@ def get_external_id_person(requests_session: RateLimitedSession, person_id: str)
     if response.status_code == 200:
         imdb_id = data["imdb_id"]
     else:
-        print(f"Error: {data['status_message']}")
+        CustomLogger.error(f"Error in get_external_id_person({person_id=}): {data['status_message']}")
 
     return imdb_id
 
@@ -90,7 +91,7 @@ def get_external_id_project(requests_session: RateLimitedSession, project_id: st
     if response.status_code == 200:
         imdb_id = data["imdb_id"]
     else:
-        print(f"Error: {data['status_message']}")
+        CustomLogger.error(f"Error in get_external_id_project({project_id=}): {data['status_message']}")
 
     return imdb_id
 
@@ -116,7 +117,7 @@ def get_genres_by_id(requests_session: RateLimitedSession, genre_ids: "list[int]
             with open(TMDB_GENRES_FILE, "w") as file:
                 json.dump(all_genres, file, indent=4)
         else:
-            print(f"Error: {data['status_message']}")
+            CustomLogger.error(f"Error in get_genres_by_id({genre_ids=}): {data['status_message']}")
     
     current_genres = [all_genres.get(str(genre_id)) for genre_id in genre_ids]
     current_genres = [genre for genre in current_genres if genre is not None]
@@ -218,12 +219,6 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
 
             data = response.json()
 
-            # ######### TEST SHIT ##########
-            # with open(f"tests/{person.name}.json", "w") as f:
-            #     json.dump(person.__dict__, f, indent=2)
-            #     json.dump(data, f, indent=2)
-            # ######### TEST SHIT ##########
-
             if response.status_code == 200:
                 projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
                 film_projects.extend(projects)
@@ -231,7 +226,7 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
                 params["page"] += 1
                 total_pages = data["total_pages"]
             else:
-                print(f"Error: {data['status_message']}")
+                CustomLogger.error(f"Error in the actor block of find_upcoming_projects({person.name=}): {data['status_message']}")
 
     params["page"] = 1
     total_pages = 2
@@ -245,13 +240,6 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
 
             data = response.json()
 
-
-            # ######### TEST SHIT ##########
-            # with open(f"tests/{person.name}.json", "w") as f:
-            #     json.dump(person.__dict__, f, indent=2)
-            #     json.dump(data, f, indent=2)
-            # ######### TEST SHIT ##########
-
             if response.status_code == 200:
 
                 projects = create_film_projects_from_response(requests_session=requests_session, json_data=data, person=person)
@@ -260,7 +248,7 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
                 params["page"] += 1
                 total_pages = data["total_pages"]
             else:
-                print(f"Error: {data['status_message']}")
+                CustomLogger.error(f"Error in the director block of find_upcoming_projects({person.name=}): {data['status_message']}")
 
     return film_projects
 
@@ -286,17 +274,4 @@ def get_released_projects_from_previous(requests_session: RateLimitedSession, pr
 
 if __name__ == "__main__":
     ...
-    with RateLimitedSession() as session:
-        person = Person(
-            notion_page_id="68d179cb-1e2d-4170-9809-adb732fdd836",
-            tmdb_id="291263",
-            tmdb_url="https://www.themoviedb.org/person/291263-jordan-peele",
-            imdb_url="https://imdb.com/name/nm1443502",
-            name="Jordan Peele",
-            is_director=True,
-            is_actor=False
-        )
-        projects = find_upcoming_projects(session, person)
 
-        for project in projects:
-            print(project.json)
