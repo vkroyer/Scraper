@@ -9,6 +9,6 @@
 
 ## Bugs/Issues/Stuff
 
-- Sometimes several duplicates of the same movie are added to the database
-  - Maybe because the same movie is found for different actors/directors? If so, why does it only show the same actor/director for each duplicate?
-  - Doesn't have several actors/directors I like for a couple movies I checked, so probably not that
+- Figure out if the close method of NotionUpdater is necessary
+  - Maybe the relations between Notion page ids and tmdb ids is not longer needed after all the code changes?
+  - Would need to figure out if the script looks through the pages in the Notion database to ensure that upcoming projects already found at a previous time are not added to the database again
