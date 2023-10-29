@@ -8,6 +8,14 @@ import time
 TMDB_MAX_REQUESTS_PER_SECOND = 30
 NOTION_MAX_REQUESTS_PER_SECOND = 3
 
+
+def get_excluded_projects():
+    """Returns a list of tmdb_ids for projects that should not be added to the database"""
+    with open("data/excluded_projects.txt", "r") as f:
+        excluded_projects = f.read().splitlines()
+    return excluded_projects
+
+
 def main():
 
     with RateLimitedSession(max_requests=TMDB_MAX_REQUESTS_PER_SECOND) as tmdb_session:
@@ -18,6 +26,9 @@ def main():
             previous_projects = notion_updater.upcoming_list
             previous_project_tmdb_ids = [project.tmdb_id for project in previous_projects]
             CustomLogger.debug(f"Found {len(previous_projects)} projects in the UpcomingProjects database")
+
+            # Remove projects where the Exclude checkbox has been checked from the databases
+            notion_updater.remove_excluded_projects_from_databases()
             
             # Move projects that have been released to the ReleasedProjects database
             if previous_projects:
@@ -30,6 +41,7 @@ def main():
 
 
             new_projects = []
+            excluded_projects = get_excluded_projects()
 
             # Scrape new upcoming projects from all persons
             for person in notion_updater.person_list:
@@ -40,6 +52,11 @@ def main():
                     # Check if project is already in the database
                     if project.tmdb_id in previous_project_tmdb_ids:
                         CustomLogger.debug(f"Project '{project.title}' is already in the database")
+                        continue
+
+                    # Check if project is excluded
+                    if project.tmdb_id in excluded_projects:
+                        CustomLogger.debug(f"Project '{project.title}' is excluded from the database")
                         continue
 
                     # Check if the project is already in another person's list

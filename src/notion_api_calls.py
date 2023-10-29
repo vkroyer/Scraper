@@ -233,6 +233,8 @@ class NotionUpdater():
             else:
                 release_date = None
 
+            exclude = properties["Exclude"]["checkbox"]
+
             film_project = FilmProject(
                 tmdb_id=tmdb_id,
                 tmdb_url=tmdb_url,
@@ -241,9 +243,10 @@ class NotionUpdater():
                 synopsis=synopsis,
                 genres=genres,
                 popularity=popularity,
-                associated_person_page_ids=person_page_ids,
+                associated_person_page_ids=person_page_ids
             )
 
+            film_project.excluded = exclude
             film_project.notion_page_id = project_page_id
             
             if release_date:
@@ -334,7 +337,6 @@ class NotionUpdater():
             CustomLogger.error(error)
             raise ValueError(error)
         
-        responses = []
         for project in projects:
             release_date = {"start": project.release_date} if hasattr(project, "release_date") else None
             data = {
@@ -350,13 +352,11 @@ class NotionUpdater():
                 "Release date": {"date": release_date}
             }
             response = self.create_page_in_database(data=data, database_id=database_id)
-            responses.append(response)
 
             if response.status_code != 200:
                 CustomLogger.warning(f"Something went wrong when adding {project.title} to the database. Response status code: {response.status_code}.")
 
-        return responses
-    
+
     def create_page_in_database(self, data: dict, database_id: str):
         """Creates an entry in the Notion database for a project.
         
@@ -380,18 +380,21 @@ class NotionUpdater():
     
 
     def remove_film_projects_from_database(self, projects: "list[FilmProject]"):
-        """Remove film projects from the database."""
+        """Remove film projects from the database and add their tmdb ids to a file with excluded projects."""
         
-        responses = []
+        removed_project_tmdb_ids = []
         for project in projects:
             response = self.delete_page(page_id=project.notion_page_id)
-            responses.append(response)
 
             if response.status_code != 200:
                 CustomLogger.warning(f"Something went wrong when deleting {project.title} from the database. Response status code: {response.status_code}.")
-                
+            else:
+                removed_project_tmdb_ids.append(project.tmdb_id)
+            
+            CustomLogger.debug(f"Deleted {project.title} from the database")
         
-        return responses
+        # Add the removed projects to the excluded projects file
+        self.add_excluded_projects_to_file(project_tmdb_ids=removed_project_tmdb_ids)
     
 
     def delete_page(self, page_id: str):
@@ -399,6 +402,37 @@ class NotionUpdater():
         url = f"{CREATE_PAGE_URL}/{page_id}"
         response = self._session.patch(url, headers=HEADERS, json={"archived": True})
         return response
+    
+
+    def add_excluded_projects_to_file(self, project_tmdb_ids: "list[str]"):
+        """Add all excluded project tmdb ids to a file for future lookup."""
+        with open("data/excluded_projects.txt", "a") as f:
+            for tmdb_id in project_tmdb_ids:
+                f.write(f"{tmdb_id}\n")
+        CustomLogger.debug(f"Added {len(project_tmdb_ids)} projects to the excluded projects file")
+
+    def get_excluded_projects(self, database: str = "upcoming") -> "list[FilmProject]": 
+        """Get all projects with the exclude checkbox checked."""
+        projects = []
+        if database == "upcoming":
+            projects = self.upcoming_list
+        elif database == "released":
+            projects = self.released_list
+
+        excluded_projects = [project for project in projects if project.excluded]
+
+        return excluded_projects
+    
+
+    def remove_excluded_projects_from_databases(self):
+        """Remove all excluded projects from the upcoming and released databases."""
+        excluded_projects = []
+        excluded_projects.extend(self.get_excluded_projects(database="upcoming"))
+        excluded_projects.extend(self.get_excluded_projects(database="released"))
+
+        CustomLogger.debug(f"Found {len(excluded_projects)} excluded projects to remove from the databases")
+
+        self.remove_film_projects_from_database(projects=excluded_projects)
     
 
     def close(self):
@@ -413,3 +447,4 @@ class NotionUpdater():
 
 if __name__ == "__main__":
     ...
+        

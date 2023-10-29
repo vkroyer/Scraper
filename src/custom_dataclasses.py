@@ -33,6 +33,7 @@ class FilmProject:
     associated_person_page_ids: "list[str]" = field(default_factory=list)
     release_date: str = field(init=False)
     notion_page_id: str = field(init=False)
+    excluded: bool = field(init=False)
 
     @property
     def __dict__(self):
