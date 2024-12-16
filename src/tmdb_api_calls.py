@@ -253,10 +253,10 @@ def find_upcoming_projects(requests_session: RateLimitedSession, person: Person)
     return film_projects
 
 
-def get_released_projects_from_previous(requests_session: RateLimitedSession, previous_projects: "list[FilmProject]") -> "list[FilmProject]":
-    """Check if any of the previous upcoming projects have been released and return the released projects."""
+def get_updated_projects_from_previous(requests_session: RateLimitedSession, previous_projects: "list[FilmProject]") -> "list[FilmProject]":
+    """Return previous projects with updated info."""
 
-    released_projects: "list[FilmProject]" = []
+    updated_projects: "list[FilmProject]" = []
 
     for project in previous_projects:
         movie_url = f"{TMDB_API_MOVIE_DETAILS_URL}/{project.tmdb_id}"
@@ -267,9 +267,9 @@ def get_released_projects_from_previous(requests_session: RateLimitedSession, pr
             release_date = movie_details.get("release_date")
             status = movie_details.get("status")
             if release_date and datetime.strptime(release_date, "%Y-%m-%d").date() < DATE_TODAY and status == "Released":
-                released_projects.append(project)
+                updated_projects.append(project)
 
-    return released_projects
+    return updated_projects
 
 
 if __name__ == "__main__":

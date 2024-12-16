@@ -16,6 +16,7 @@ NOTION_API_TOKEN = os.environ.get("NOTION_API_TOKEN")
 PERSON_LIST_DATABASE_ID = os.environ.get("PERSON_LIST_DATABASE_ID")
 UPCOMING_PROJECTS_DATABASE_ID = os.environ.get("UPCOMING_PROJECTS_DATABASE_ID")
 RELEASED_PROJECTS_DATABASE_ID = os.environ.get("RELEASED_PROJECTS_DATABASE_ID")
+MOVIE_AND_TV_SHOW_LIST_DATABASE_ID = os.environ.get("MOVIE_AND_TV_SHOW_LIST_DATABASE_ID")
 
 # API ENDPOINTS
 GET_PERSON_DATABASE_URL = f"https://api.notion.com/v1/databases/{PERSON_LIST_DATABASE_ID}/query"
@@ -45,13 +46,14 @@ class NotionUpdater():
 
     def __init__(self, session: RateLimitedSession) -> None:
         self._session = session
-        self._person_list: "list[Person]" = []
-        self._name_list: "list[str]" = []
-        self._upcoming_list: "list[FilmProject]" = []
-        self._released_list: "list[FilmProject]" = []
-        self._previous_projects: "dict[str, str]" = {}
-        self._upcoming_multiselect_options: "dict[str, dict[str, str]]" = {}
-        self._released_multiselect_options: "dict[str, dict[str, str]]" = {}
+        self._person_list: list[Person] = []
+        self._name_list: list[str] = []
+        self._upcoming_list: list[FilmProject] = []
+        self._released_list: list[FilmProject] = []
+        self._previous_projects: dict[str, str] = {}
+        self._upcoming_multiselect_options: dict[str, dict[str, str]] = {}
+        self._released_multiselect_options: dict[str, dict[str, str]] = {}
+        self._genre_multiselect_options
 
         # Find all relevant previous data
         self.update_person_list()
@@ -203,7 +205,7 @@ class NotionUpdater():
             self._person_list.append(person)
             self._name_list.append(name)
 
-    def get_projects(self, url: str) -> "list[FilmProject]":
+    def get_projects(self, url: str) -> list[FilmProject]:
         """Method for getting all `FilmProject`s of the database at `url`."""
         projects = []
         results = self.read_database(url=url)
@@ -268,7 +270,7 @@ class NotionUpdater():
         self._released_list = self.get_projects(url=GET_RELEASED_DATABASE_URL)
 
 
-    def add_persons_to_database(self, persons: "list[Person]"):
+    def add_persons_to_database(self, persons: list[Person]):
         responses = []
         for person in persons:
             # Don't add person that's already in the Notion database
@@ -322,7 +324,7 @@ class NotionUpdater():
         return response
     
 
-    def add_film_projects_to_database(self, projects: "list[FilmProject]", database: str):
+    def add_film_projects_to_database(self, projects: list[FilmProject], database: str):
         """Add film projects to the database with a relation link to the person database.
         
         Param `database` must be either "upcoming" or "released".
@@ -379,7 +381,7 @@ class NotionUpdater():
         return response
     
 
-    def remove_film_projects_from_database(self, projects: "list[FilmProject]"):
+    def remove_film_projects_from_database(self, projects: list[FilmProject]):
         """Remove film projects from the database and add their tmdb ids to a file with excluded projects."""
         
         removed_project_tmdb_ids = []
@@ -404,14 +406,14 @@ class NotionUpdater():
         return response
     
 
-    def add_excluded_projects_to_file(self, project_tmdb_ids: "list[str]"):
+    def add_excluded_projects_to_file(self, project_tmdb_ids: list[str]):
         """Add all excluded project tmdb ids to a file for future lookup."""
         with open("data/excluded_projects.txt", "a") as f:
             for tmdb_id in project_tmdb_ids:
                 f.write(f"{tmdb_id}\n")
         CustomLogger.debug(f"Added {len(project_tmdb_ids)} projects to the excluded projects file")
 
-    def get_excluded_projects(self, database: str = "upcoming") -> "list[FilmProject]": 
+    def get_excluded_projects(self, database: str = "upcoming") -> list[FilmProject]: 
         """Get all projects with the exclude checkbox checked."""
         projects = []
         if database == "upcoming":
